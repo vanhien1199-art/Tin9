@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Chosen Palette: Calm Neutrals with Thematic Scratch Accents -->
+    <!-- Application Structure Plan: Ứng dụng sử dụng cấu trúc SPA với các tab (Tabs) được điều khiển bằng JavaScript. Cấu trúc này bao gồm: Giới thiệu, Sự kiện, Vòng lặp, Điều kiện, Cảm biến, và Tổng kết. Thiết kế này được chọn vì nó phá vỡ cấu trúc tuyến tính của tài liệu gốc, cho phép người dùng tự do khám phá các khái niệm theo bất kỳ thứ tự nào, điều này ưu việt hơn cho mục đích tham khảo và học tập. Các tương tác chính bao gồm chuyển tab (JS) và các nút "Xem ví dụ" (JS toggle) để quản lý mật độ thông tin, chỉ hiển thị mã ví dụ khi người dùng yêu cầu. -->
+    <!-- Visualization & Content Choices:
+        - Report Info: 4 khái niệm cốt lõi (Sự kiện, Vòng lặp, Điều kiện, Cảm biến). -> Goal: Tổ chức & Điều hướng. -> Viz/Method: Cấu trúc SPA dạng Tab (HTML/Tailwind). -> Interaction: Nhấp chuột để chuyển đổi nội dung (JS). -> Justification: Cung cấp khả năng truy cập phi tuyến tính, thân thiện với người dùng.
+        - Report Info: Các khối lệnh mẫu (ví dụ: 'Khi bấm vào...'). -> Goal: Thông báo & Giáo dục. -> Viz/Method: Các khối div được tạo kiểu bằng HTML/Tailwind để mô phỏng trực quan các khối lệnh Scratch (màu vàng cho Sự kiện, cam cho Vòng lặp/Điều kiện, xanh lam cho Cảm biến). -> Interaction: Không (chỉ hiển thị). -> Justification: Thay thế nhu cầu về hình ảnh, tạo ra sự nhận diện thương hiệu và học tập ngay lập tức.
+        - Report Info: Các ví dụ thực hành ('Bong bóng bay', 'Bọ rùa'). -> Goal: Thu hút & Giảng giải. -> Viz/Method: Các khối nội dung có thể thu gọn (Accordion). -> Interaction: Nút "Xem ví dụ" bật/tắt (toggle) hiển thị khối mã (JS). -> Justification: Giữ cho giao diện chính sạch sẽ, khuyến khích sự tương tác chủ động của người dùng.
+        - Report Info: Số lượng các khối lệnh chính được giới thiệu trong mỗi danh mục (Sự kiện: 3, Vòng lặp: 2, Điều kiện: 2, Cảm biến: 3). -> Goal: Tổng hợp & So sánh. -> Viz/Method: Biểu đồ cột (Chart.js/Canvas). -> Interaction: Hover/Tooltip. -> Justification: Thỏa mãn yêu cầu bắt buộc sử dụng Chart.js bằng cách trực quan hóa meta-data có trong chính báo cáo, cung cấp một bản tóm tắt định lượng hữu ích. -> Library: Chart.js.
+        - Report Info: Mối quan hệ giữa các khái niệm. -> Goal: Tổng hợp. -> Viz/Method: Sơ đồ quy trình đơn giản (HTML/Tailwind Flexbox). -> Interaction: Hover. -> Justification: Trực quan hóa "chuỗi tư duy lập trình" được đề cập trong phần giới thiệu.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <title>Sổ Tay Khái Niệm Scratch Tương Tác</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-main: #f9fafb;
+            --bg-secondary: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --border-color: #e5e7eb;
+            --scratch-yellow: #FFBF00;
+            --scratch-orange: #FFAB19;
+            --scratch-blue: #59C0E3;
+            --scratch-dark-blue: #4C97FF;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+        }
+        .tab-btn {
+            padding: 0.75rem 1.25rem;
+            margin: 0 0.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            color: var(--text-secondary);
+        }
+        .tab-btn:hover {
+            background-color: #f3f4f6;
+            color: var(--text-primary);
+        }
+        .tab-btn.active {
+            color: var(--scratch-dark-blue);
+            border-bottom: 2px solid var(--scratch-dark-blue);
+            background-color: var(--bg-secondary);
+        }
+        .tab-content {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .scratch-block {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            color: white;
+            font-family: monospace;
+            white-space: nowrap;
+        }
+        .scratch-event { background-color: var(--scratch-yellow); color: #333; }
+        .scratch-control { background-color: var(--scratch-orange); }
+        .scratch-sensing { background-color: var(--scratch-blue); }
+        .scratch-motion { background-color: var(--scratch-dark-blue); }
+        .scratch-looks { background-color: #9966FF; }
+        .example-toggle {
+            background-color: #f3f4f6;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .example-toggle:hover {
+            background-color: #e5e7eb;
+        }
+        .example-content {
+            background-color: #fafafa;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .flow-diagram-step {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        .flow-diagram-step:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .flow-diagram-arrow {
+            font-size: 2rem;
+            color: var(--text-secondary);
+            align-self: center;
+            margin: 0 0.5rem;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Khái Niệm quan trọng trong Scratch</h1>
+            <p class="text-xl text-gray-600">Hành Trình Lập Trình Đầu Tiên Của Bạn</p>
+        </header>
+
+        <nav class="flex flex-wrap justify-center mb-6">
+            <button class="tab-btn active" data-target="gioi-thieu">Giới thiệu</button>
+            <button class="tab-btn" data-target="su-kien">1. Sự Kiện</button>
+            <button class="tab-btn" data-target="vong-lap">2. Vòng Lặp</button>
+            <button class="tab-btn" data-target="dieu-kien">3. Điều Kiện</button>
+            <button class="tab-btn" data-target="cam-bien">4. Cảm Biến</button>
+            <button class="tab-btn" data-target="tong-ket">Tổng kết</button>
+        </nav>
+
+        <main id="content-area">
+
+            <section id="gioi-thieu" class="tab-content">
+                <h2 class="text-3xl font-bold mb-4" style="color: var(--scratch-dark-blue);">Scratch là gì và tại sao bạn nên học?</h2>
+                <p class="text-lg text-gray-700 mb-6">
+                    Chào mừng bạn đến với thế giới lập trình sáng tạo của Scratch! Scratch là một môi trường lập trình ứng dụng đặc biệt, nơi bạn có thể tạo ra các chương trình, trò chơi hay hoạt ảnh bằng cách "kéo" và "thả" các khối lệnh đầy màu sắc lại với nhau thay vì phải viết những dòng mã phức tạp.
+                </p>
+                <p class="text-lg text-gray-700 mb-4">
+                    Việc học lập trình với Scratch không chỉ là một trải nghiệm thú vị mà còn mang lại những lợi ích vô cùng quan trọng, giúp bạn rèn luyện:
+                </p>
+                <ul class="list-disc list-inside space-y-2 mb-6 text-lg text-gray-700">
+                    <li><strong>Tư duy logic chặt chẽ:</strong> Học cách sắp xếp các lệnh theo một trình tự hợp lý để giải quyết vấn đề.</li>
+                    <li><strong>Năng lực sáng tạo:</strong> Tự do thiết kế giao diện, nhân vật và cốt truyện cho các sản phẩm của riêng mình.</li>
+                    <li><strong>Kỹ năng giải quyết vấn đề:</strong> Biết cách sử dụng tư duy máy tính để phân tích và tìm ra giải pháp.</li>
+                </ul>
+                <p class="text-lg text-gray-700">
+                    Để bắt đầu, chúng ta cần nắm vững bốn khái niệm nền tảng. Đây không chỉ là bốn khái niệm riêng lẻ, mà là một chuỗi tư duy lập trình hoàn chỉnh: một <strong>Sự kiện</strong> khởi động, <strong>Vòng lặp</strong> giúp nó hoạt động liên tục, <strong>Điều kiện</strong> giúp nó ra quyết định, và <strong>Cảm biến</strong> cung cấp thông tin để đưa ra quyết định đó.
+                </p>
+            </section>
+
+            <section id="su-kien" class="tab-content hidden">
+                <h2 class="text-3xl font-bold mb-4" style="color: var(--scratch-yellow); text-shadow: 0 0 5px rgba(0,0,0,0.1);">1. Sự Kiện (Events)</h2>
+                <p class="text-lg text-gray-700 mb-6">
+                    Giống như khi gặp đèn đỏ thì bạn phải dừng lại, trong Scratch, một sự kiện (Event) là tác nhân kích hoạt một chuỗi các hành động. Mọi chương trình bạn tạo ra đều cần một điểm khởi đầu, và đó chính là vai trò của các khối lệnh Sự kiện. Chúng luôn đứng đầu mỗi đoạn mã và ra hiệu cho chương trình biết "Khi nào cần bắt đầu".
+                </p>
+                
+                <h3 class="text-2xl font-semibold mb-4">3 Lệnh Sự Kiện Thông Dụng</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[600px] border border-gray-200 rounded-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-600">Khối Lệnh Mẫu</th>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-600">Ý Nghĩa và Ví Dụ Sử Dụng</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="p-4"><div class="scratch-block scratch-event">Khi bấm vào 🏁</div></td>
+                                <td class="p-4 text-gray-700"><strong>Bắt đầu toàn bộ chương trình.</strong> Khi người dùng nhấn lá cờ xanh, tất cả mã bên dưới khối này sẽ chạy.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4"><div class="scratch-block scratch-event">Khi bấm phím [cách]</div></td>
+                                <td class="p-4 text-gray-700"><strong>Tạo sự tương tác qua bàn phím.</strong> Cho phép người dùng điều khiển nhân vật bằng mũi tên hoặc phím cách.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4"><div class="scratch-block scratch-event">Khi bấm vào nhân vật này</div></td>
+                                <td class="p-4 text-gray-700"><strong>Làm cho nhân vật phản ứng với chuột.</strong> Hữu ích khi muốn nhân vật nói hoặc đổi màu khi được nhấp vào.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-6">
+                    <button class="example-toggle" data-target="example-event">
+                        Ví dụ: Nói "xin chào" <span>▶</span>
+                    </button>
+                    <div id="example-event" class="example-content hidden">
+                        <p class="font-semibold mb-2">Chương trình đầu tiên "Khi bấm vào lá cờ xanh, nhân vật sẽ nói 'xin chào'":</p>
+                        <div class="space-y-1">
+                            <div class="scratch-block scratch-event">Khi bấm vào 🏁</div>
+                            <div class="scratch-block scratch-looks" style="margin-left: 1rem;">nói [xin chào] trong 2 giây</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="vong-lap" class="tab-content hidden">
+                <h2 class="text-3xl font-bold mb-4" style="color: var(--scratch-orange);">2. Vòng Lặp (Loops)</h2>
+                <p class="text-lg text-gray-700 mb-6">
+                    Trong cuộc sống, chúng ta thường thực hiện các hành động lặp đi lặp lại. Trong lập trình, vòng lặp (Loop) là một cấu trúc cho phép một hoặc nhiều hành động được thực hiện lại nhiều lần mà không cần phải viết lại mã.
+                </p>
+
+                <h3 class="text-2xl font-semibold mb-4">2 Lệnh Lặp Chính</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[600px] border border-gray-200 rounded-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-600">Khối Lệnh Mẫu</th>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-600">Khi Nào Nên Dùng?</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="p-4"><div class="scratch-block scratch-control">liên tục</div></td>
+                                <td class="p-4 text-gray-700">Dùng khi bạn muốn các hành động bên trong nó diễn ra <strong>mãi mãi</strong>, không bao giờ dừng lại.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4"><div class="scratch-block scratch-control">lặp lại [10]</div></td>
+                                <td class="p-4 text-gray-700">Dùng khi bạn muốn các hành động được thực hiện một <strong>số lần xác định</strong> (ví dụ: vỗ tay 5 lần).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-6">
+                    <button class="example-toggle" data-target="example-loop">
+                        Ví dụ: "Bong bóng bay (Phần 1)" <span>▶</span>
+                    </button>
+                    <div id="example-loop" class="example-content hidden">
+                        <p class="font-semibold mb-2">Kết hợp sự kiện và vòng lặp để làm một quả bóng bay lên không ngừng:</p>
+                        <div class="space-y-1">
+                            <div class="scratch-block scratch-event">Khi bấm vào 🏁</div>
+                            <div class="scratch-block scratch-control" style="margin-left: 1rem;">liên tục</div>
+                            <div class="scratch-block scratch-motion" style="margin-left: 2rem;">thay đổi y một lượng [10]</div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-600">Thao tác này sẽ liên tục tăng tọa độ y (chiều dọc) của quả bóng, làm nó bay lên.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="dieu-kien" class="tab-content hidden">
+                <h2 class="text-3xl font-bold mb-4" style="color: var(--scratch-orange);">3. Điều Kiện (Conditionals)</h2>
+                <p class="text-lg text-gray-700 mb-6">
+                    Lệnh điều kiện (Conditional) cho phép chương trình kiểm tra một tình huống cụ thể và thực hiện các hành động tương ứng. Nó hoạt động dựa trên cấu trúc "Nếu...Thì...". Ví dụ: "Nếu thời tiết đẹp thì chúng tôi sẽ đi dã ngoại."
+                </p>
+
+                <h3 class="text-2xl font-semibold mb-4">2 Khối Điều Kiện Cơ Bản</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[600px] border border-gray-200 rounded-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-600">Loại Khối Lệnh</th>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-600">Khi Nào Nên Dùng?</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="p-4"><div class="scratch-block scratch-control">Nếu &lt; &gt; thì</div></td>
+                                <td class="p-4 text-gray-700">Dùng khi bạn chỉ cần thực hiện hành động <strong>nếu điều kiện là đúng</strong>. Nếu sai, bỏ qua.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4"><div class="scratch-block scratch-control">Nếu &lt; &gt; thì <br> nếu không thì</div></td>
+                                <td class="p-4 text-gray-700">Dùng khi bạn cần lựa chọn: làm <strong>hành động A nếu đúng</strong>, làm <strong>hành động B nếu sai</strong>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-6">
+                    <button class="example-toggle" data-target="example-condition">
+                        Ví dụ: "Bong bóng bay (Phần 2)" <span>▶</span>
+                    </button>
+                    <div id="example-condition" class="example-content hidden">
+                        <p class="font-semibold mb-2">Nâng cấp chương trình: <strong>Nếu</strong> quả bóng chạm cạnh trên, <strong>thì</strong> nó sẽ quay trở lại cạnh dưới.</p>
+                        <div class="space-y-1">
+                            <div class="scratch-block scratch-event">Khi bấm vào 🏁</div>
+                            <div class="scratch-block scratch-control" style="margin-left: 1rem;">liên tục</div>
+                            <div class="scratch-block scratch-motion" style="margin-left: 2rem;">thay đổi y một lượng [10]</div>
+                            <div class="scratch-block scratch-control" style="margin-left: 2rem;">Nếu &lt;tọa độ y &gt; 160&gt; thì</div>
+                            <div class="scratch-block scratch-motion" style="margin-left: 3rem;">đặt y thành [-160]</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="cam-bien" class="tab-content hidden">
+                <h2 class="text-3xl font-bold mb-4" style="color: var(--scratch-blue);">4. Cảm Biến (Sensing)</h2>
+                <p class="text-lg text-gray-700 mb-6">
+                    Lệnh Cảm biến (Sensing) là các khối lệnh giúp nhân vật nhận biết được các yếu tố trong môi trường, chẳng hạn như va chạm, chạm màu sắc, hoặc nhận tín hiệu từ bàn phím/chuột. Chúng thường có hình lục giác và được đặt vừa vặn vào "ô điều kiện" của các khối `Nếu <> thì`.
+                </p>
+                
+                <h3 class="text-2xl font-semibold mb-4">3 Loại Cảm Biến Quan Trọng</h3>
+                <ul class="list-disc list-inside space-y-3 text-lg text-gray-700">
+                    <li>
+                        <strong>Cảm biến Va chạm:</strong>
+                        <div class="scratch-block scratch-sensing ml-4 mt-1">đang chạm vào [con trỏ chuột v] ?</div>
+                        <p class="ml-4 text-base">Kiểm tra xem nhân vật có đang chạm vào con trỏ chuột, cạnh sân khấu, hay một nhân vật khác không.</p>
+                    </li>
+                    <li>
+                        <strong>Cảm biến Màu sắc:</strong>
+                        <div class="scratch-block scratch-sensing ml-4 mt-1">đang chạm vào màu [#ff0000] ?</div>
+                        <p class="ml-4 text-base">Kiểm tra xem nhân vật có đang tiếp xúc với một màu sắc cụ thể nào đó không.</p>
+                    </li>
+                    <li>
+                        <strong>Cảm biến Phím và Chuột:</strong>
+                        <div class="scratch-block scratch-sensing ml-4 mt-1">phím [cách] được bấm?</div>
+                        <p class="ml-4 text-base">Kiểm tra xem người dùng có đang nhấn một phím nào đó không, giúp tạo cơ chế điều khiển.</p>
+                    </li>
+                </ul>
+
+                <div class="mt-6">
+                    <button class="example-toggle" data-target="example-sensing">
+                        Ví dụ: "Bọ rùa di chuyển và chào" <span>▶</span>
+                    </button>
+                    <div id="example-sensing" class="example-content hidden">
+                        <p class="font-semibold mb-2">Chương trình bọ rùa di chuyển sang phải (khi nhấn phím) và chào (khi chạm bọ rùa khác):</p>
+                        <div class="space-y-1">
+                            <div class="scratch-block scratch-event">Khi bấm vào 🏁</div>
+                            <div class="scratch-block scratch-control" style="margin-left: 1rem;">liên tục</div>
+                            
+                            <div class="scratch-block scratch-control" style="margin-left: 2rem;">Nếu &lt;<span class="scratch-block scratch-sensing !p-1 !inline-block">phím [mũi tên phải] được bấm?</span>&gt; thì</div>
+                            <div class="scratch-block scratch-motion" style="margin-left: 3rem;">thay đổi x một lượng [10]</div>
+                            
+                            <div class="scratch-block scratch-control" style="margin-left: 2rem;">Nếu &lt;<span class="scratch-block scratch-sensing !p-1 !inline-block">đang chạm vào [bọ rùa 2 v] ?</span>&gt; thì</div>
+                            <div class="scratch-block scratch-looks" style="margin-left: 3rem;">nói [xin chào!] trong 2 giây</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tong-ket" class="tab-content hidden">
+                <h2 class="text-3xl font-bold mb-4 text-gray-800">Tổng kết: Chuỗi Tư Duy Lập Trình</h2>
+                <p class="text-lg text-gray-700 mb-6">
+                    Bốn khái niệm này không hoạt động riêng lẻ. Chúng kết hợp với nhau để tạo thành một "chuỗi tư duy lập trình" hoàn chỉnh. Đây là cách chúng thường làm việc cùng nhau trong một chương trình tương tác:
+                </p>
+                
+                <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-2 my-8 p-4 bg-gray-50 rounded-lg">
+                    <div class="flow-diagram-step scratch-event">1. SỰ KIỆN<br><span class="text-sm font-normal text-gray-700">(Bắt đầu)</span></div>
+                    <div class="flow-diagram-arrow hidden md:block">→</div>
+                    <div class="flow-diagram-step scratch-control">2. VÒNG LẶP<br><span class="text-sm font-normal text-gray-700">(Chạy liên tục)</span></div>
+                    <div class="flow-diagram-arrow hidden md:block">→</div>
+                    <div class="flow-diagram-step scratch-control">3. ĐIỀU KIỆN<br><span class="text-sm font-normal text-gray-700">(Kiểm tra...)</span></div>
+                    <div class="flow-diagram-arrow hidden md:block">→</div>
+                    <div class="flow-diagram-step scratch-sensing">4. CẢM BIẾN<br><span class="text-sm font-normal text-gray-700">(...để ra quyết định)</span></div>
+                </div>
+
+                <p class="text-lg text-gray-700 mb-6">
+                    Một <strong>Sự kiện</strong> (như nhấn phím) được kiểm tra bên trong một <strong>Vòng lặp</strong> (để luôn luôn lắng nghe). Vòng lặp chứa một <strong>Điều kiện</strong> (Nếu...) sử dụng <strong>Cảm biến</strong> (phím có được bấm không?) để quyết định hành động nào sẽ xảy ra.
+                </p>
+
+                <hr class="my-8">
+
+                <h3 class="text-2xl font-semibold mb-4 text-center">Khối Lệnh Cơ Bản Được Giới Thiệu</h3>
+                <p class="text-lg text-gray-700 mb-6 text-center">
+                    Biểu đồ dưới đây tóm tắt số lượng các khối lệnh mẫu quan trọng mà chúng ta đã tìm hiểu cho từng khái niệm cơ bản.
+                </p>
+                <div class="chart-container">
+                    <canvas id="summaryChart"></canvas>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let summaryChartInstance = null;
+            
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            function setupTabs() {
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const targetId = button.getAttribute('data-target');
+                        
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+
+                        tabContents.forEach(content => {
+                            if (content.id === targetId) {
+                                content.classList.remove('hidden');
+                            } else {
+                                content.classList.add('hidden');
+                            }
+                        });
+
+                        if (targetId === 'tong-ket' && !summaryChartInstance) {
+                            renderSummaryChart();
+                        }
+                    });
+                });
+            }
+
+            function setupAccordions() {
+                const toggles = document.querySelectorAll('.example-toggle');
+                toggles.forEach(toggle => {
+                    toggle.addEventListener('click', () => {
+                        const targetId = toggle.getAttribute('data-target');
+                        const content = document.getElementById(targetId);
+                        const icon = toggle.querySelector('span');
+                        
+                        const isHidden = content.classList.toggle('hidden');
+                        
+                        if (isHidden) {
+                            icon.textContent = ' ▶';
+                        } else {
+                            icon.textContent = ' ▼';
+                        }
+                    });
+                });
+            }
+
+            function renderSummaryChart() {
+                const ctx = document.getElementById('summaryChart').getContext('2d');
+                if (summaryChartInstance) {
+                    summaryChartInstance.destroy();
+                }
+                summaryChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Sự Kiện', 'Vòng Lặp', 'Điều Kiện', 'Cảm Biến'],
+                        datasets: [{
+                            label: 'Số khối lệnh mẫu quan trọng',
+                            data: [3, 2, 2, 3],
+                            backgroundColor: [
+                                'rgba(255, 191, 0, 0.7)',
+                                'rgba(255, 171, 25, 0.7)',
+                                'rgba(255, 171, 25, 0.7)',
+                                'rgba(89, 192, 227, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 191, 0, 1)',
+                                'rgba(255, 171, 25, 1)',
+                                'rgba(255, 171, 25, 1)',
+                                'rgba(89, 192, 227, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y + ' khối';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Số Lượng Khối Lệnh'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            setupTabs();
+            setupAccordions();
+        });
+    </script>
+</body>
+</html>
