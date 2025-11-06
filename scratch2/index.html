@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Học Liệu Scratch: Dự Án Đầu Tiên</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.7;
+            background-color: #f8f9fa;
+            color: #212529;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px 30px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+        }
+        h1 {
+            color: #4a148c; /* Scratch Purple */
+            text-align: center;
+            border-bottom: 3px solid #f0e6ff;
+            padding-bottom: 15px;
+            margin-top: 10px;
+        }
+        h2 {
+            color: #ff6f00; /* Scratch Orange */
+            margin-top: 40px;
+            border-bottom: 2px solid #fff0e0;
+            padding-bottom: 10px;
+            font-size: 1.8em;
+        }
+        h3 {
+            color: #0d47a1; /* Dark Blue */
+            margin-top: 30px;
+            font-size: 1.5em;
+        }
+        h4 {
+            color: #1b5e20; /* Dark Green */
+            font-weight: bold;
+            margin-top: 25px;
+            font-size: 1.2em;
+        }
+        p, li {
+            font-size: 16px;
+            color: #343a40;
+        }
+        ul, ol {
+            padding-left: 25px;
+        }
+        .intro-text {
+            font-style: italic;
+            color: #555;
+            text-align: center;
+            font-size: 1.1em;
+            margin: 25px 15px;
+            padding: 15px;
+            background-color: #fdfdfe;
+            border-left: 5px solid #4a148c;
+            border-radius: 0 8px 8px 0;
+        }
+        .logic-explainer {
+            background-color: #e3f2fd; /* Light Blue */
+            border-left: 6px solid #2196f3; /* Blue */
+            padding: 18px 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+        .logic-explainer strong {
+            color: #0d47a1;
+            font-size: 1.1em;
+            display: block;
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 14px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f3f5;
+            font-weight: 600;
+            color: #495057;
+        }
+        td code {
+            background-color: #e9ecef;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+        }
+        .scratch-script {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+        .scratch-block {
+            padding: 8px 12px;
+            margin-bottom: 2px;
+            color: white;
+            font-weight: 500;
+            border-radius: 4px;
+            display: block;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        .block-event { background-color: #FFBF00; color: #000; }
+        .block-control { background-color: #FFAB19; }
+        .block-motion { background-color: #4C97FF; }
+        .block-sensing { color: #000; } /* Special case for sensing text */
+        .block-stop { background-color: #E65100; }
+
+        .block-container {
+            margin-left: 20px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #f0f0f0;
+            border-radius: 5px;
+            margin-top: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .block-if {
+            background-color: #FFAB19;
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            font-size: 0.9em;
+        }
+        .block-if-inner {
+            margin: 8px 0 0 20px; /* Indent */
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .instruction-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .conclusion {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+        .conclusion ul {
+            list-style-type: '✅';
+            padding-left: 20px;
+        }
+        .conclusion li {
+            padding-left: 10px;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+                margin: 10px;
+            }
+            h1 { font-size: 1.8em; }
+            h2 { font-size: 1.5em; }
+            h3 { font-size: 1.3em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hướng Dẫn Chi Tiết: Xây Dựng Dự Án Scratch Đầu Tiên Của Bạn</h1>
+        
+        <p class="intro-text">
+            Chào mừng bạn đến với thế giới lập trình sáng tạo cùng Scratch! Tài liệu này được thiết kế để dẫn dắt bạn qua từng bước xây dựng hai dự án hoàn chỉnh: một hoạt ảnh "Chong chóng gió" đầy màu sắc và một trò chơi tương tác "Mèo bắt chuột" kịch tính. Chúng tôi sẽ không chỉ chỉ cho bạn "làm thế nào" mà còn giải thích "tại sao" đằng sau mỗi khối lệnh, giúp bạn xây dựng một nền tảng tư duy lập trình vững chắc để tự tin sáng tạo những dự án của riêng mình.
+        </p>
+
+        <h2>1. Dự án 1: Hoạt ảnh "Chong chóng gió"</h2>
+        <p>Trong dự án đầu tiên này, chúng ta sẽ tạo ra một hoạt ảnh đơn giản nhưng đẹp mắt: một chiếc chong chóng quay liên tục trên nền bối cảnh bãi biển. Mục tiêu chính của dự án là giúp bạn làm quen với công cụ vẽ trong Scratch và cách sử dụng vòng lặp để tạo ra một chuyển động không bao giờ ngừng.</p>
+        
+        
+        
+        <h3>1.1. Bước 1: Dựng Sân Khấu - Tạo Bối Cảnh</h3>
+        <p>Đầu tiên, chúng ta cần chuẩn bị "sân khấu" cho hoạt ảnh của mình.</p>
+
+        <h4>Tạo Phông Nền:</h4>
+        <ul>
+            <li>Trong khu vực Phông nền, nhấp vào biểu tượng <strong>Chọn một Phông nền</strong> (biểu tượng hình ảnh).</li>
+            <li>Từ thư viện có sẵn, hãy chọn một phông nền bãi biển phù hợp (ví dụ: "Beach Malibu").</li>
+        </ul>
+
+        <h4>Vẽ Que Chong Chóng:</h4>
+        <ul>
+            <li>Trong khu vực Nhân vật, di chuột vào biểu tượng <strong>Chọn một Nhân vật</strong> và nhấp vào công cụ <strong>Vẽ</strong>.</li>
+            <li>Sử dụng công cụ <strong>Vẽ đường thẳng</strong>, vẽ một đường thẳng đứng đơn giản để làm que cắm cho chong chóng.</li>
+            <li>Đây sẽ là một nhân vật riêng biệt và cố định.</li>
+        </ul>
+
+        <div class="logic-explainer">
+            <strong>Giải thích Logic:</strong>
+            <p>Tại sao chúng ta tách que và cánh chong chóng thành hai nhân vật riêng biệt? Việc này giúp đơn giản hóa lập trình. Chúng ta chỉ cần làm cho nhân vật "Cánh chong chóng" quay, trong khi nhân vật "Que chong chóng" đứng yên. Nếu vẽ chúng chung một nhân vật, cả que và cánh sẽ quay cùng nhau, điều này không đúng với thực tế.</p>
+        </div>
+
+        <h3>1.2. Bước 2: Sáng Tạo Cánh Chong Chóng</h3>
+        <p>Bây giờ là phần thú vị nhất: tạo ra những cánh quạt đầy màu sắc.</p>
+        
+        
+        <h4>Vẽ Cánh Đầu Tiên:</h4>
+        <ul>
+            <li>Tạo một nhân vật mới bằng công cụ <strong>Vẽ</strong>.</li>
+            <li>Sử dụng công cụ <strong>Vẽ hình chữ nhật</strong> để tạo ra một hình chữ nhật dài.</li>
+            <li>Sử dụng công cụ <strong>Chỉnh sửa hình dạng</strong> (biểu tượng mũi tên có dấu chấm), nhấp vào hình chữ nhật. Bây giờ bạn có thể kéo một trong hai góc trên cùng vào điểm giữa của cạnh đối diện để tạo thành hình tam giác, mang lại dáng vẻ của một cánh quạt.</li>
+        </ul>
+
+        <h4>Nhân Bản và Xoay:</h4>
+        <ul>
+            <li>Với cánh quạt vẫn đang được chọn, sử dụng công cụ <strong>Sao chép</strong> (copy) và sau đó là <strong>Dán</strong> (paste) để tạo ra một bản sao y hệt.</li>
+            <li>Xoay cánh thứ hai này một góc 90 độ (vuông góc với cánh thứ nhất) và di chuyển nó vào vị trí trung tâm, giao với cánh đầu tiên.</li>
+        </ul>
+
+        <h4>Hoàn Thiện Chong Chóng:</h4>
+        <ul>
+            <li>Lặp lại bước 2 cho hai cánh còn lại để tạo thành một chiếc chong chóng hoàn chỉnh có bốn cánh.</li>
+            <li>Sử dụng công cụ <strong>Tô màu</strong> để tô màu cho mỗi cánh theo sở thích của bạn.</li>
+        </ul>
+
+        <h3>1.3. Bước 3: Thổi Hồn Cho Chong Chóng Quay</h3>
+        <p>Khi đã có hình ảnh, chúng ta sẽ lập trình để nó chuyển động. Hãy chọn nhân vật "Cánh chong chóng" và kéo các khối lệnh sau vào khu vực lập trình.</p>
+
+        <h4>Tổng Hợp Kịch Bản:</h4>
+        <p>Ghép 3 khối lệnh dưới đây lại với nhau theo đúng thứ tự để tạo thành kịch bản hoàn chỉnh.</p>
+        
+        <div class="scratch-script">
+            <div class="scratch-block block-event">Khi bấm vào 🚩</div>
+            <div class="scratch-block block-control">
+                liên tục
+                <div class="block-container" style="padding-left: 0;">
+                     <div class="scratch-block block-motion">xoay ↻ 15 độ</div>
+                </div>
+            </div>
+        </div>
+        
+        
+
+        <div class="logic-explainer">
+            <strong>Giải thích Logic: Kịch bản này hoạt động như thế nào?</strong>
+            <p>Rất đơn giản:</p>
+            <ul>
+                <li>Khối <strong>Khi bấm vào lá cờ xanh</strong> chính là "cò súng" để khởi động toàn bộ chương trình.</li>
+                <li>Khối <strong>liên tục</strong> đảm bảo rằng bất kỳ hành động nào bên trong nó sẽ không bao giờ dừng lại.</li>
+                <li>Và khối <strong>xoay 15 độ</strong> chính là hành động được lặp đi lặp lại, tạo ra hiệu ứng hoạt ảnh quay tròn mượt mà mà chúng ta thấy trên màn hình.</li>
+            </ul>
+        </div>
+        <p><strong>Chúc mừng bạn đã hoàn thành hoạt ảnh đầu tiên!</strong> Bây giờ, hãy cùng nâng cấp kỹ năng với một dự án có tính tương tác cao hơn: trò chơi Mèo bắt chuột.</p>
+
+        <h2>2. Dự án 2: Trò chơi "Mèo bắt chuột"</h2>
+        <p>Ở dự án này, chúng ta sẽ tạo ra một trò chơi đơn giản: người chơi sẽ điều khiển một chú chuột chạy trốn khỏi một chú mèo đang đuổi theo. Mục tiêu học tập chính là xử lý sự kiện từ bàn phím để điều khiển nhân vật và lập trình logic va chạm để xác định điều kiện kết thúc trò chơi.</p>
+
+        
+
+        <h3>2.1. Bước 1: Chuẩn Bị Sân Chơi</h3>
+        <ul>
+            <li><strong>Chọn Phông Nền:</strong> Nhấp vào biểu tượng <strong>Chọn một Phông nền</strong> và chọn bất kỳ phông nền nào bạn thích từ thư viện (ví dụ: "Grid" hoặc "Woods").</li>
+            <li><strong>Chọn Nhân Vật:</strong> Nhấp vào biểu tượng <strong>Chọn một Nhân vật</strong> và thêm hai nhân vật từ thư viện có sẵn: <strong>Mèo (Cat)</strong> và <strong>Chuột (Mouse)</strong>.</li>
+        </ul>
+
+        <h3>2.2. Bước 2: Lập Trình Cho Nhân Vật Chính - Chú Chuột</h3>
+        <p>Bây giờ, chúng ta sẽ lập trình để người chơi có thể điều khiển chú Chuột bằng các phím mũi tên trên bàn phím. Hãy chọn nhân vật <strong>Chuột</strong> để bắt đầu.</p>
+
+        <h4>Xây Dựng Logic Điều Khiển:</h4>
+        <p>Logic cốt lõi rất đơn giản: "Nếu một phím mũi tên được nhấn, hãy hướng nhân vật về phía đó và di chuyển". Để kiểm tra liên tục xem phím nào đang được nhấn, chúng ta cần một vòng lặp <strong>liên tục</strong> và các khối điều kiện <strong>nếu...thì</strong> cho mỗi phím.</p>
+
+        <h4>Tạo Bảng Hướng Dẫn Lệnh:</h4>
+        <p>Bảng dưới đây tóm tắt các khối lệnh cần thiết cho mỗi phím mũi tên.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Phím Được Nhấn</th>
+                    <th>Hành Động</th>
+                    <th>Khối Lệnh Tương Ứng</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Mũi tên lên</td>
+                    <td><code>đặt hướng bằng 0</code> sau đó <code>di chuyển 10 bước</code></td>
+                    <td><code>nếu &lt;phím mũi tên lên được bấm?&gt; thì</code></td>
+                </tr>
+                <tr>
+                    <td>Mũi tên xuống</td>
+                    <td><code>đặt hướng bằng 180</code> sau đó <code>di chuyển 10 bước</code></td>
+                    <td><code>nếu &lt;phím mũi tên xuống được bấm?&gt; thì</code></td>
+                </tr>
+                <tr>
+                    <td>Mũi tên phải</td>
+                    <td><code>đặt hướng bằng 90</code> sau đó <code>di chuyển 10 bước</code></td>
+                    <td><code>nếu &lt;phím mũi tên phải được bấm?&gt; thì</code></td>
+                </tr>
+                <tr>
+                    <td>Mũi tên trái</td>
+                    <td><code>đặt hướng bằng -90</code> sau đó <code>di chuyển 10 bước</code></td>
+                    <td><code>nếu &lt;phím mũi tên trái được bấm?&gt; thì</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Tổng Hợp Kịch Bản (cho nhân vật Chuột):</h4>
+        <p>Ghép 4 khối <code>nếu...thì</code> này vào bên trong một khối <code>liên tục</code>. Cuối cùng, đặt toàn bộ cấu trúc này dưới khối sự kiện <code>Khi bấm vào lá cờ xanh</code>.</p>
+        
+        <div class="scratch-script">
+            <div class="scratch-block block-event">Khi bấm vào 🚩</div>
+            <div class="scratch-block block-control">
+                liên tục
+                <div class="block-container">
+                    
+                    <div class="block-if">
+                        nếu &lt;<span class="block-sensing">phím mũi tên lên được bấm?</span>&gt; thì
+                        <div class="block-if-inner">
+                            <div class="scratch-block block-motion">đặt hướng bằng 0</div>
+                            <div class="scratch-block block-motion">di chuyển 10 bước</div>
+                        </div>
+                    </div>
+
+                    <div class="block-if">
+                        nếu &lt;<span class="block-sensing">phím mũi tên xuống được bấm?</span>&gt; thì
+                        <div class="block-if-inner">
+                            <div class="scratch-block block-motion">đặt hướng bằng 180</div>
+                            <div class="scratch-block block-motion">di chuyển 10 bước</div>
+                        </div>
+                    </div>
+                    
+                    <div class="block-if">
+                        nếu &lt;<span class="block-sensing">phím mũi tên phải được bấm?</span>&gt; thì
+                        <div class="block-if-inner">
+                            <div class="scratch-block block-motion">đặt hướng bằng 90</div>
+                            <div class="scratch-block block-motion">di chuyển 10 bước</div>
+                        </div>
+                    </div>
+
+                    <div class="block-if">
+                        nếu &lt;<span class="block-sensing">phím mũi tên trái được bấm?</span>&gt; thì
+                        <div class="block-if-inner">
+                            <div class="scratch-block block-motion">đặt hướng bằng -90</div>
+                            <div class="scratch-block block-motion">di chuyển 10 bước</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="logic-explainer">
+            <strong>Giải thích Logic:</strong>
+            <p>Tại sao chúng ta lại dùng <strong>đặt hướng</strong> kết hợp với <strong>di chuyển</strong> thay vì thay đổi trực tiếp tọa độ X, Y? Phương pháp này giúp logic của chúng ta trở nên linh hoạt hơn. Nhân vật sẽ luôn di chuyển về phía nó đang nhìn, giúp mã nguồn dễ đọc và dễ mở rộng sau này, ví dụ như khi bạn muốn nhân vật di chuyển theo đường chéo hoặc theo một góc bất kỳ.</p>
+        </div>
+
+        <h3>2.3. Bước 3: Lập Trình Cho Kẻ Đi Săn - Chú Mèo</h3>
+        <p>Giờ chúng ta sẽ lập trình cho Mèo tự động đuổi theo Chuột. Hãy chọn nhân vật <strong>Mèo</strong>.</p>
+
+        <h4>Logic Đuổi Bắt:</h4>
+        <p>Logic của Mèo là: "Liên tục hướng về phía Chuột và di chuyển một vài bước tới đó". Chúng ta sẽ sử dụng khối <code>hướng về phía [Mouse]</code> và <code>di chuyển...bước</code>.</p>
+
+        <h4>Logic Va Chạm (Kết Thúc Trò Chơi):</h4>
+        <p>Trò chơi kết thúc khi nào? Khi Mèo bắt được Chuột. Điều kiện này được lập trình là: "Nếu Mèo chạm vào Chuột, hãy dừng tất cả lại". Chúng ta cần khối cảm biến <code>đang chạm [Mouse]?</code> và khối điều khiển <code>dừng lại [tất cả]</code>.</p>
+
+        <h4>Tổng Hợp Kịch Bản (cho nhân vật Mèo):</h4>
+        <p>Ghép các khối lệnh trên thành một kịch bản hoàn chỉnh cho Mèo. Chúng ta sẽ cho Mèo di chuyển <strong>3 bước</strong> trong mỗi vòng lặp. Con số này quyết định tốc độ của Mèo – bạn có thể tăng nó lên để trò chơi khó hơn hoặc giảm xuống để dễ hơn.</p>
+        
+        <div class="scratch-script">
+            <div class="scratch-block block-event">Khi bấm vào 🚩</div>
+            <div class="scratch-block block-control">
+                liên tục
+                <div class="block-container">
+                    <div class="scratch-block block-motion">hướng về phía [Mouse v]</div>
+                    <div class="scratch-block block-motion">di chuyển 3 bước</div>
+                    
+                    <div class="block-if" style="margin-top: 10px;">
+                        nếu &lt;<span class="block-sensing">đang chạm [Mouse v]?</span>&gt; thì
+                        <div class="block-if-inner">
+                            <div class="scratch-block block-stop">dừng lại [tất cả v]</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <p style="margin-top: 20px;"><strong>Tuyệt vời!</strong> Bạn vừa tạo ra trò chơi đầu tiên của mình với logic điều khiển và điều kiện thắng thua. Hãy thử chơi và xem bạn có thể thoát khỏi chú Mèo trong bao lâu nhé!</p>
+
+        <div class="conclusion">
+            <h2>3. Tổng Kết và Hướng Đi Tiếp Theo</h2>
+            <p>Qua hai dự án trên, bạn đã học và thực hành được những kỹ năng cốt lõi trong Scratch:</p>
+            <ul>
+                <li>Tạo hoạt ảnh đơn giản bằng vòng lặp liên tục.</li>
+                <li>Sử dụng công cụ vẽ để thiết kế nhân vật của riêng mình.</li>
+                <li>Điều khiển nhân vật bằng các sự kiện từ bàn phím.</li>
+                <li>Lập trình logic va chạm cơ bản để xác định các điều kiện trong một chương trình.</li>
+            </ul>
+            <p>Đây chỉ là những bước khởi đầu. Đừng ngần ngại thử nghiệm! Hãy thử thay đổi tốc độ quay của chong chóng, tăng tốc độ của Mèo, hoặc thậm chí thêm điểm số cho trò chơi. Lập trình là một hành trình sáng tạo không giới hạn, và bạn đã có những công cụ đầu tiên để bắt đầu khám phá. Chúc bạn học tốt!</p>
+        </div>
+    </div>
+</body>
+</html>
