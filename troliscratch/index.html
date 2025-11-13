@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trợ lý AI - Hỏi đáp</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <script>
+        window.lessonId = 'default';
+        // --- TOÀN BỘ SCRIPT CHATBOT LỖI ĐÃ BỊ XÓA KHỎI ĐÂY ---
+    </script>
+
+    <style>
+        :root {
+            --primary-color: #0056b3; /* Xanh dương */
+            --secondary-color: #ffc107; /* Vàng */
+            --bg-color: #f4f7fc;
+            --card-bg-color: #ffffff;
+            --text-color: #333;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.7; background-color: var(--bg-color); color: var(--text-color); margin: 0; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        header { background-color: var(--primary-color); color: white; padding: 1.5rem 1rem; text-align: center; margin-bottom: 30px; position: relative; }
+        header h1 { margin: 0; font-size: 2.2em; }
+        .card { background-color: var(--card-bg-color); border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 30px; }
+        h2, h3, h4 { color: var(--primary-color); }
+        h2 { border-bottom: 3px solid var(--secondary-color); padding-bottom: 10px; margin-top: 0; }
+        button { background-color: var(--secondary-color); color: var(--text-color); border: none; padding: 10px 20px; font-size: 1em; border-radius: 5px; cursor: pointer; }
+        
+        .home-btn { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); font-size: 28px; color: white; text-decoration: none; opacity: 0.8; }
+        
+        /* CSS Chatbot, Footer, Back-to-Top */
+        /* Tôi sẽ sử dụng phiên bản CSS nâng cấp mà thầy/cô thích */
+        #ai-chatbot-card h3, #ai-chatbot-card h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.8em;
+        }
+        .chat-window {
+            height: 400px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        .chat-message {
+            padding: 12px 18px;
+            border-radius: 20px;
+            max-width: 75%;
+            line-height: 1.5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.07);
+        }
+        .ai-message {
+            background-color: #e9e9eb;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        .user-message {
+            background-color: var(--primary-color);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .chat-input-area input {
+            flex-grow: 1;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            padding: 14px 20px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        .chat-input-area input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(0,123,255,0.3);
+        }
+        .chat-input-area button {
+            border-radius: 25px;
+            font-weight: bold;
+            padding: 0 30px;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1em;
+            transition: opacity 0.3s;
+        }
+        .chat-input-area button:hover { opacity: 0.8; }
+        
+        .site-footer { background-color: #333; color: #f1f1f1; padding: 30px 0; font-size: 0.9em; }
+        .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .site-footer h4 { color: var(--secondary-color); }
+        .site-footer ul { list-style-type: none; padding: 0; }
+        .site-footer a { color: #f1f1f1; text-decoration: none; }
+        #back-to-top-btn { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 999; background-color: var(--secondary-color); color: var(--text-color); cursor: pointer; padding: 10px; border-radius: 50%; font-size: 18px; width: 50px; height: 50px; text-align: center; line-height: 30px; text-decoration: none; border: none;}
+    </style>
+</head>
+<body id="page-top">
+    <header>
+        <a href="/" class="home-btn" title="Về trang chủ">🏠</a>
+        <h1>Trợ lý Học tập AI</h1>
+    </header>
+
+    <div class="container">
+        <section id="ai-chatbot-card" class="card">
+            <h2>🤖 Trợ lý AI</h2>
+            <p>Bạn có bất kỳ câu hỏi nào về các bài học Khoa học Tự nhiên không?</p>
+            <div id="chat-window" class="chat-window">
+                <div class="chat-message ai-message">Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="user-input" placeholder="Đặt câu hỏi bất kỳ...">
+                <button id="send-button">Gửi</button>
+            </div>
+        </section>
+    </div>
+
+    <footer class="site-footer"></footer>
+    <a href="#page-top" id="back-to-top-btn" title="Lên đầu trang">⬆️</a>
+
+    <script>
+    // Script cho các chức năng chung (Footer, Back-to-Top)
+    document.addEventListener('DOMContentLoaded', function() {
+        const backToTopBtn = document.getElementById("back-to-top-btn");
+        if(backToTopBtn){ 
+            window.onscroll = () => { 
+                backToTopBtn.style.display = (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) ? "block" : "none"; 
+            }; 
+        }
+        
+        const footer = document.querySelector('.site-footer');
+        if (footer) {
+             footer.innerHTML = `<div class="container"><div class="footer-grid"><div><h4>Nguồn tham khảo</h4><ul><li>Sách giáo khoa KHTN.</li></ul></div><div><h4>Về trang web</h4><ul><li><a href="/">Về trang danh sách học liệu</a></li></ul></div><div><h4>Bản quyền & Liên hệ</h4><p>&copy; ${new Date().getFullYear()}</p><p>Góp ý: <a href="mailto:gopy@example.com">gopy@example.com</a></p></div></div></div>`;
+        }
+    });
+    </script>
+    
+    <script src="../shared/chatbot.js"></script>
+</body>
+</html>
