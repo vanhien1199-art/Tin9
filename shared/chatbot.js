@@ -1,11 +1,11 @@
-// Xóa bỏ lớp bọc "DOMContentLoaded" vì script này giờ đã nằm ở cuối trang.
+// File: /shared/chatbot.js (Phiên bản chuẩn)
 
 const chatWindow = document.getElementById('chat-window');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 
-// URL của Web Service trung tâm
-const AI_SERVICE_URL = '/askAI'; // Đường dẫn cho Cloudflare
+// URL của Web Service trung tâm trên Cloudflare
+const AI_SERVICE_URL = '/askAI'; 
 
 // Lấy mã bài học được định nghĩa trong từng file HTML
 const LESSON_ID = window.lessonId || 'default';
@@ -25,7 +25,6 @@ function addMessageToChat(text, className) {
     messageElement.classList.add('chat-message', className);
     chatWindow.appendChild(messageElement);
     
-    // Kiểm tra xem thư viện `marked` đã được tải chưa
     if (typeof marked !== 'undefined') {
         messageElement.innerHTML = marked.parse(text);
     } else {
@@ -57,7 +56,6 @@ async function askAI() {
         const data = await response.json();
 
         if (!response.ok) {
-            // Lấy thông báo lỗi cụ thể từ server nếu có
             throw new Error(data.error || 'Lỗi không xác định từ server');
         }
         
@@ -65,7 +63,6 @@ async function askAI() {
 
     } catch (error) {
         console.error("Lỗi khi gọi AI:", error);
-        waitingMessage.innerHTML = marked.parse(`Xin lỗi, Trợ lí AI hiện đang quá tải! Vui lòng thử lại sau ít phút (${error.message})`);
+        waitingMessage.innerHTML = marked.parse(`**Xin lỗi, đã có lỗi xảy ra!** (${error.message})`);
     }
 }
-
