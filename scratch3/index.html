@@ -3,122 +3,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trợ lý AI - Hỏi đáp</title>
-
+    <title>Trợ lý Scratch - Hỏi đáp</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Google Fonts for modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
-    <script>
-        window.lessonId = 'default';
-        // --- TOÀN BỘ SCRIPT CHATBOT LỖI ĐÃ BỊ XÓA KHỎI ĐÂY ---
-    </script>
-
     <style>
         :root {
-            --primary-color: #0056b3; /* Xanh dương */
-            --secondary-color: #ffc107; /* Vàng */
-            --bg-color: #f4f7fc;
-            --card-bg-color: #ffffff;
-            --text-color: #333;
+            --primary-color: #1479ff;
+            --secondary-color: #ffa940;
+            --bg-gradient-start: #f4f7fc;
+            --bg-gradient-end: #e6f0ff;
+            --card-bg: #fff;
+            --text-main: #1a2455;
+            --text-muted: #687293;
+            --border-radius: 18px;
+            --box-shadow: 0 8px 32px rgba(52,103,217,0.09);
         }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.7; background-color: var(--bg-color); color: var(--text-color); margin: 0; }
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
-        header { background-color: var(--primary-color); color: white; padding: 1.5rem 1rem; text-align: center; margin-bottom: 30px; position: relative; }
-        header h1 { margin: 0; font-size: 2.2em; }
-        .card { background-color: var(--card-bg-color); border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 30px; }
-        h2, h3, h4 { color: var(--primary-color); }
-        h2 { border-bottom: 3px solid var(--secondary-color); padding-bottom: 10px; margin-top: 0; }
-        button { background-color: var(--secondary-color); color: var(--text-color); border: none; padding: 10px 20px; font-size: 1em; border-radius: 5px; cursor: pointer; }
-        
-        .home-btn { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); font-size: 28px; color: white; text-decoration: none; opacity: 0.8; }
-        
-        /* CSS Chatbot, Footer, Back-to-Top */
-        /* Tôi sẽ sử dụng phiên bản CSS nâng cấp mà thầy/cô thích */
-        #ai-chatbot-card h3, #ai-chatbot-card h2 {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.8em;
-        }
-        .chat-window {
-            height: 400px;
-            border: 1px solid #ddd;
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            overflow-y: auto;
+        html {
             scroll-behavior: smooth;
         }
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.75;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            color: var(--text-main);
+            margin: 0;
+        }
+        .container {
+            max-width: 980px;
+            margin: 32px auto;
+            padding: 0 28px 60px;
+        }
+        header {
+            background: linear-gradient(90deg, var(--primary-color), #64b5f6 90%);
+            color: #fff;
+            padding: 2.7rem 1.2rem 1.7rem;
+            text-align: center;
+            border-bottom-left-radius: var(--border-radius);
+            border-bottom-right-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            position: relative;
+        }
+        .home-btn {
+            position: absolute;
+            top: 1.8rem;
+            left: 1.5rem;
+            font-size: 2em;
+            color: #fff;
+            opacity: 0.85;
+            transition: opacity 0.2s, transform 0.2s;
+            text-decoration: none;
+            z-index: 2;
+        }
+        .home-btn:hover {
+            opacity: 1;
+            transform: scale(1.12);
+        }
+        header h1 {
+            font-size: 2.7em;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -2px;
+            text-shadow: 0 1px 16px rgba(52,103,217,0.10);
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 48px 34px 38px;
+            margin-bottom: 42px;
+            transition: box-shadow 0.2s;
+        }
+        .card:hover {
+            box-shadow: 0 8px 40px rgba(52,103,217,0.18);
+        }
+        h2, h3, h4 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 0.6em;
+        }
+        h2 {
+            font-size: 2em;
+            border-bottom: 3px solid var(--secondary-color);
+            padding-bottom: 12px;
+            margin-top: 0;
+        }
+        button {
+            background: var(--secondary-color);
+            color: #fff;
+            border: none;
+            padding: 12px 34px;
+            font-size: 1.1em;
+            border-radius: 24px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(52,103,217,0.042);
+            transition: background 0.2s, opacity 0.2s;
+        }
+        button:hover {
+            background: #ff822e;
+            opacity: 0.93;
+        }
+        /* Chatbot Section */
+        #ai-chatbot-card h2 {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 2em;
+        }
+        #ai-chatbot-card p {
+            font-size: 1.13em;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .chat-window {
+            height: 410px;
+            border: 1px solid #e0e5ef;
+            background: linear-gradient(97deg, #f8fafc 0%, #f8faff 100%);
+            padding: 18px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            margin-bottom: 21px;
+        }
         .chat-message {
-            padding: 12px 18px;
-            border-radius: 20px;
-            max-width: 75%;
-            line-height: 1.5;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.07);
+            padding: 14px 22px;
+            border-radius: 22px;
+            max-width: 80%;
+            font-size: 1em;
+            line-height: 1.55;
+            box-shadow: 0 2px 8px rgba(52,103,217,0.05);
         }
         .ai-message {
-            background-color: #e9e9eb;
-            color: #333;
+            background: #f3f5fb;
+            color: var(--text-main);
             align-self: flex-start;
-            border-bottom-left-radius: 5px;
+            border-bottom-left-radius: 7px;
+            border-top-right-radius: 7px;
         }
         .user-message {
-            background-color: var(--primary-color);
-            color: white;
+            background: linear-gradient(90deg, #1479ff 40%, #409fff 100%);
+            color: #fff;
             align-self: flex-end;
-            border-bottom-right-radius: 5px;
+            border-bottom-right-radius: 7px;
+            border-top-left-radius: 7px;
         }
         .chat-input-area {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 4px;
         }
         .chat-input-area input {
             flex-grow: 1;
-            border: 1px solid #ccc;
-            border-radius: 25px;
-            padding: 14px 20px;
+            border: 1.3px solid #cfd5e6;
+            border-radius: 24px;
+            padding: 16px 22px;
             font-size: 1em;
-            transition: border-color 0.3s;
+            transition: border-color 0.18s, box-shadow 0.18s;
+            background: #f7fafd;
         }
         .chat-input-area input:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 5px rgba(0,123,255,0.3);
+            box-shadow: 0 0 8px rgba(52,103,217,0.11);
         }
-        .chat-input-area button {
-            border-radius: 25px;
-            font-weight: bold;
-            padding: 0 30px;
-            background-color: var(--primary-color);
-            color: white;
-            font-size: 1em;
-            transition: opacity 0.3s;
+        .site-footer {
+            background: linear-gradient(90deg, #232d46, #334877 90%);
+            color: #e7eaf1;
+            padding: 40px 0 21px;
+            font-size: 0.97em;
+            box-shadow: 0 -4px 22px rgba(52,103,217,0.1);
         }
-        .chat-input-area button:hover { opacity: 0.8; }
-        
-        .site-footer { background-color: #333; color: #f1f1f1; padding: 30px 0; font-size: 0.9em; }
-        .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .site-footer h4 { color: var(--secondary-color); }
-        .site-footer ul { list-style-type: none; padding: 0; }
-        .site-footer a { color: #f1f1f1; text-decoration: none; }
-        #back-to-top-btn { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 999; background-color: var(--secondary-color); color: var(--text-color); cursor: pointer; padding: 10px; border-radius: 50%; font-size: 18px; width: 50px; height: 50px; text-align: center; line-height: 30px; text-decoration: none; border: none;}
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 26px;
+            max-width: 900px;
+            margin: 0 auto 20px;
+            padding: 0 18px;
+        }
+        .site-footer h4 {
+            color: var(--secondary-color);
+            font-weight: 700;
+        }
+        .site-footer ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .site-footer li {
+            margin-bottom: 8px;
+        }
+        .site-footer a {
+            color: #e7eaf1;
+            text-decoration: none;
+            border-bottom: 1px dashed #ffd789;
+            transition: color 0.2s;
+        }
+        .site-footer a:hover {
+            color: #ffcd68;
+        }
+        .footer-note {
+            text-align: center;
+            color: #b6bac8;
+            margin-top: 15px;
+            font-size: 0.93em;
+        }
+        #back-to-top-btn {
+            display: none;
+            position: fixed;
+            bottom: 26px;
+            right: 24px;
+            z-index: 999;
+            background: var(--secondary-color);
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 14px 18px;
+            border-radius: 50px;
+            font-size: 1.4em;
+            box-shadow: 0 2px 16px rgba(52,103,217,0.13);
+            transition: background 0.2s, opacity 0.2s;
+        }
+        #back-to-top-btn:hover {
+            background: #ff822e;
+            opacity: 0.93;
+        }
+        @media only screen and (max-width: 700px) {
+            .container { padding: 0 8px 60px; }
+            .card { padding: 20px 10px; }
+            .chat-window { padding: 8px; }
+            .chat-input-area input { padding: 10px 14px; }
+        }
+        @media only screen and (max-width: 440px) {
+            .chat-window { height: 260px; }
+            .card { padding: 10px; }
+            header { padding: 1.1rem 0.3rem; }
+            header h1 { font-size: 1.6em; }
+            .chat-input-area button { padding: 0 10px; font-size: 0.9em; }
+        }
     </style>
 </head>
 <body id="page-top">
     <header>
         <a href="/" class="home-btn" title="Về trang chủ">🏠</a>
-        <h1>Trợ lý Học tập AI</h1>
+        <h1>Trợ lý Học Scratch</h1>
     </header>
 
     <div class="container">
         <section id="ai-chatbot-card" class="card">
-            <h2>🤖 Trợ lý AI</h2>
-            <p>Bạn có bất kỳ câu hỏi nào về các bài học Khoa học Tự nhiên không?</p>
+           <h2>
+  <span style="display:inline-flex;align-items:center;">
+    <svg width="40" height="40" viewBox="0 0 48 48" fill="none" style="margin-right:12px;vertical-align:middle;">
+      <rect x="8" y="14" width="32" height="24" rx="12" fill="#1479ff"/>
+      <rect x="16" y="22" width="16" height="8" rx="4" fill="#fff"/>
+      <circle cx="18" cy="26" r="2" fill="#1479ff"/>
+      <circle cx="30" cy="26" r="2" fill="#1479ff"/>
+      <rect x="21" y="8" width="6" height="6" rx="3" fill="#ffa940"/>
+      <rect x="29" y="8" width="6" height="6" rx="3" fill="#ffa940"/>
+      <rect x="23" y="5" width="2" height="4" rx="1" fill="#1479ff"/>
+      <rect x="31" y="5" width="2" height="4" rx="1" fill="#1479ff"/>
+    </svg>
+    Trợ lý Scratch
+  </span>
+</h2>
+            <p>
+                Xin chào! Mình là Mentor Scratch, người bạn đồng hành của bạn trên hành trình khám phá lập trình Scratch.<br>
+                Bạn có câu hỏi nào, hay muốn bắt đầu một dự án thú vị? Hãy trò chuyện cùng mình nhé!
+            </p>
             <div id="chat-window" class="chat-window">
-                <div class="chat-message ai-message">Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?</div>
+                <div class="chat-message ai-message">
+                    Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?
+                </div>
             </div>
             <div class="chat-input-area">
                 <input type="text" id="user-input" placeholder="Đặt câu hỏi bất kỳ...">
@@ -134,19 +295,45 @@
     // Script cho các chức năng chung (Footer, Back-to-Top)
     document.addEventListener('DOMContentLoaded', function() {
         const backToTopBtn = document.getElementById("back-to-top-btn");
-        if(backToTopBtn){ 
-            window.onscroll = () => { 
-                backToTopBtn.style.display = (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) ? "block" : "none"; 
-            }; 
-        }
-        
+        window.onscroll = () => {
+            backToTopBtn.style.display = (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) ? "block" : "none";
+        };
+
         const footer = document.querySelector('.site-footer');
         if (footer) {
-             footer.innerHTML = `<div class="container"><div class="footer-grid"><div><h4>Nguồn tham khảo</h4><ul><li>Sách giáo khoa KHTN.</li></ul></div><div><h4>Về trang web</h4><ul><li><a href="/">Về trang danh sách học liệu</a></li></ul></div><div><h4>Bản quyền & Liên hệ</h4><p>&copy; ${new Date().getFullYear()}</p><p>Góp ý: <a href="mailto:gopy@example.com">gopy@example.com</a></p></div></div></div>`;
+            footer.innerHTML = `
+                <div class="container">
+                    <div class="footer-grid">
+                        <div>
+                            <h4>Nguồn tham khảo</h4>
+                            <ul>
+                                <li><a href="https://scratch.mit.edu/" target="_blank">Scratch MIT</a></li>
+                                <li><a href="https://hoclieu.sachmem.vn/" target="_blank">Học liệu Sachmem</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4>Về trang web</h4>
+                            <ul>
+                                <li><a href="/">Trang chủ</a></li>
+                                <li><a href="#ai-chatbot-card">Trợ lý Scratch</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4>Liên hệ</h4>
+                            <ul>
+                                <li>Email: <a href="mailto:vanhien.art@gmail.com">vanhien.art@gmail.com</a></li>
+                                <li>Facebook: <a href="https://www.facebook.com/nung.hien" target="_blank">https://www.facebook.com/nung.hien</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="footer-note">
+                        © 2025 Mentor Scratch. Website hỗ trợ học tập phi lợi nhuận. Made with ❤️ by Nung Van Hien.
+                    </div>
+                </div>
+            `;
         }
     });
     </script>
-    
     <script src="../shared/chatbot.js"></script>
 </body>
 </html>
