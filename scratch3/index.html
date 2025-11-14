@@ -2,326 +2,464 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#1479ff">
     <title>Trợ lý Scratch - Hỏi đáp</title>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Google Fonts for modern look -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
+
     <style>
-        :root {
-            --primary-color: #1479ff;
-            --secondary-color: #ffa940;
-            --bg-gradient-start: #f4f7fc;
-            --bg-gradient-end: #e6f0ff;
-            --card-bg: #fff;
-            --text-main: #1a2455;
-            --text-muted: #687293;
-            --border-radius: 18px;
-            --box-shadow: 0 8px 32px rgba(52,103,217,0.09);
+        :root{
+            --primary:#1479ff;
+            --accent:#ffa940;
+            --bg:#f4f7fc;
+            --card:#fff;
+            --text:#1a2455;
+            --muted:#687293;
+            --radius:14px;
+            --shadow:0 8px 32px rgba(52,103,217,0.06);
+            --input-height:56px;
         }
-        html {
-            scroll-behavior: smooth;
-        }
-        body {
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.75;
-            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
-            color: var(--text-main);
-            margin: 0;
-        }
-        .container {
-            max-width: 980px;
-            margin: 32px auto;
-            padding: 0 28px 60px;
-        }
+
+        /* Mobile-first base */
+        html,body{height:100%;margin:0;background:linear-gradient(135deg,var(--bg) 0%, #e6f0ff 100%);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; color:var(--text);-webkit-font-smoothing:antialiased}
+        a{color:inherit}
         header {
-            background: linear-gradient(90deg, var(--primary-color), #64b5f6 90%);
-            color: #fff;
-            padding: 2.7rem 1.2rem 1.7rem;
-            text-align: center;
-            border-bottom-left-radius: var(--border-radius);
-            border-bottom-right-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            position: relative;
+            position:sticky;
+            top:0;
+            z-index:50;
+            display:flex;
+            align-items:center;
+            gap:12px;
+            padding:12px 14px;
+            background:linear-gradient(90deg,var(--primary), #64b5f6 90%);
+            color:#fff;
+            box-shadow:var(--shadow);
+            border-bottom-left-radius:10px;
+            border-bottom-right-radius:10px;
+            backdrop-filter: blur(6px);
+            transition: transform .25s ease, opacity .25s ease;
+            transform: translateY(0);
+            opacity:1;
         }
-        .home-btn {
-            position: absolute;
-            top: 1.8rem;
-            left: 1.5rem;
-            font-size: 2em;
-            color: #fff;
-            opacity: 0.85;
-            transition: opacity 0.2s, transform 0.2s;
-            text-decoration: none;
-            z-index: 2;
+        /* When header is hidden (during fullscreen), slide up */
+        header.hidden {
+            transform: translateY(-120%);
+            opacity:0;
+            pointer-events:none;
         }
-        .home-btn:hover {
-            opacity: 1;
-            transform: scale(1.12);
+
+        .home-btn{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            width:44px;
+            height:44px;
+            border-radius:10px;
+            background:rgba(255,255,255,0.06);
+            color:#fff;
+            text-decoration:none;
+            font-size:1.1rem;
+            flex:0 0 44px;
         }
-        header h1 {
-            font-size: 2.7em;
-            font-weight: 700;
-            margin: 0;
-            letter-spacing: -2px;
-            text-shadow: 0 1px 16px rgba(52,103,217,0.10);
+        header h1{font-size:1.05rem;margin:0;font-weight:700;letter-spacing:-0.3px}
+
+        /* Fullscreen toggle button in header */
+        .fs-btn{
+            margin-left:auto;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            width:44px;
+            height:44px;
+            border-radius:10px;
+            background:rgba(255,255,255,0.06);
+            color:#fff;
+            border:none;
+            cursor:pointer;
+            flex:0 0 44px;
         }
+        .fs-btn[aria-pressed="true"]{ background:rgba(255,255,255,0.13) }
+
+        /* App wrapper that allows chat to fill screen */
+        .app {
+            display:flex;
+            flex-direction:column;
+            height:calc(100vh - 64px); /* header height approx */
+            margin: 12px;
+            transition: all .22s ease;
+        }
+
+        /* Fullscreen mode for .app (CSS overlay) */
+        .app.fullscreen {
+            position:fixed;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            margin:0;
+            border-radius:0;
+            z-index:9999;
+            padding: env(safe-area-inset-top,12px) env(safe-area-inset-right,12px) env(safe-area-inset-bottom,12px) env(safe-area-inset-left,12px);
+            background: linear-gradient(180deg,#fbfdff 0%, #ffffff 100%);
+        }
+
+        /* Floating close button visible in fullscreen */
+        .fs-close {
+            position:fixed;
+            top: env(safe-area-inset-top,12px);
+            right: env(safe-area-inset-right,12px);
+            z-index:10010;
+            display:none;
+            align-items:center;
+            justify-content:center;
+            width:44px;
+            height:44px;
+            border-radius:10px;
+            background:rgba(0,0,0,0.6);
+            color:#fff;
+            border:none;
+            cursor:pointer;
+            box-shadow:0 6px 20px rgba(0,0,0,0.25);
+        }
+        .fs-close.show { display:flex; }
+
+        /* Card with chat content */
         .card {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            padding: 48px 34px 38px;
-            margin-bottom: 42px;
-            transition: box-shadow 0.2s;
+            background:var(--card);
+            border-radius:18px;
+            box-shadow:var(--shadow);
+            overflow:hidden;
+            display:flex;
+            flex-direction:column;
+            flex:1 1 auto;
+            min-height:0; /* important for flex children scroll */
         }
-        .card:hover {
-            box-shadow: 0 8px 40px rgba(52,103,217,0.18);
+
+        /* Intro/description (collapsible on small screens) */
+        .intro {
+            padding:14px 16px;
+            border-bottom:1px solid #eef3ff;
+            display:flex;
+            gap:12px;
+            align-items:flex-start;
         }
-        h2, h3, h4 {
-            color: var(--primary-color);
-            font-weight: 700;
-            margin-bottom: 0.6em;
+        .intro .title{font-weight:700;color:var(--primary);font-size:0.98rem}
+        .intro p{margin:6px 0 0;color:var(--muted);font-size:0.92rem;line-height:1.35}
+
+        /* Chat window: flexible and scrollable */
+        #chat-window {
+            padding:12px 12px 14px;
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+            overflow:auto;
+            -webkit-overflow-scrolling:touch;
+            flex:1 1 auto;
+            background:linear-gradient(180deg,#fbfdff 0%, #ffffff 100%);
         }
-        h2 {
-            font-size: 2em;
-            border-bottom: 3px solid var(--secondary-color);
-            padding-bottom: 12px;
-            margin-top: 0;
+        .chat-message{
+            max-width:82%;
+            padding:12px 14px;
+            border-radius:18px;
+            font-size:0.98rem;
+            line-height:1.45;
+            box-shadow:0 2px 10px rgba(18,45,93,0.04);
+            word-break:break-word;
         }
-        button {
-            background: var(--secondary-color);
-            color: #fff;
-            border: none;
-            padding: 12px 34px;
-            font-size: 1.1em;
-            border-radius: 24px;
-            cursor: pointer;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(52,103,217,0.042);
-            transition: background 0.2s, opacity 0.2s;
+        .ai-message{
+            background:#f3f5fb;
+            color:var(--text);
+            align-self:flex-start;
+            border-bottom-left-radius:8px;
+            border-top-right-radius:8px;
         }
-        button:hover {
-            background: #ff822e;
-            opacity: 0.93;
+        .user-message{
+            background:linear-gradient(90deg,var(--primary) 30%, #409fff 100%);
+            color:#fff;
+            align-self:flex-end;
+            border-bottom-right-radius:8px;
+            border-top-left-radius:8px;
         }
-        /* Chatbot Section */
-        #ai-chatbot-card h2 {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            font-size: 2em;
+
+        /* Input area fixed to bottom inside card using sticky footer technique */
+        .input-wrap {
+            position:relative;
+            background:linear-gradient(180deg, rgba(250,250,255,0.6), rgba(250,250,255,0.9));
+            border-top:1px solid #eef3ff;
+            padding:10px;
         }
-        #ai-chatbot-card p {
-            font-size: 1.13em;
-            color: var(--text-muted);
-            margin-bottom: 24px;
+
+        .chat-input {
+            display:flex;
+            gap:8px;
+            align-items:center;
+            padding:env(safe-area-inset-bottom,0) 0 0 0;
         }
-        .chat-window {
-            height: 410px;
-            border: 1px solid #e0e5ef;
-            background: linear-gradient(97deg, #f8fafc 0%, #f8faff 100%);
-            padding: 18px;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            overflow-y: auto;
-            scroll-behavior: smooth;
-            margin-bottom: 21px;
+
+        .chat-input input{
+            flex:1;
+            height:var(--input-height);
+            border-radius:14px;
+            border:1px solid #e2e8f7;
+            padding:12px 14px;
+            font-size:1rem;
+            background:#fff;
+            outline:none;
+            transition:box-shadow .12s, border-color .12s;
         }
-        .chat-message {
-            padding: 14px 22px;
-            border-radius: 22px;
-            max-width: 80%;
-            font-size: 1em;
-            line-height: 1.55;
-            box-shadow: 0 2px 8px rgba(52,103,217,0.05);
+        .chat-input input:focus{
+            border-color:var(--primary);
+            box-shadow:0 4px 18px rgba(20,121,255,0.08);
         }
-        .ai-message {
-            background: #f3f5fb;
-            color: var(--text-main);
-            align-self: flex-start;
-            border-bottom-left-radius: 7px;
-            border-top-right-radius: 7px;
+
+        .send-btn{
+            width:54px;
+            height:54px;
+            background:var(--primary);
+            color:#fff;
+            border-radius:12px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            border:none;
+            padding:0;
+            cursor:pointer;
+            box-shadow:0 6px 18px rgba(20,121,255,0.12);
+            flex:0 0 54px;
         }
-        .user-message {
-            background: linear-gradient(90deg, #1479ff 40%, #409fff 100%);
-            color: #fff;
-            align-self: flex-end;
-            border-bottom-right-radius: 7px;
-            border-top-left-radius: 7px;
+
+        .send-btn:active{transform:translateY(1px)}
+        .send-btn svg{width:22px;height:22px;display:block}
+
+        /* Small helper: show hint above input on mobile */
+        .hint {
+            font-size:0.82rem;
+            color:var(--muted);
+            padding:6px 12px 0;
         }
-        .chat-input-area {
-            display: flex;
-            gap: 12px;
-            margin-top: 4px;
+
+        /* Desktop/tablet adjustments */
+        @media (min-width:700px){
+            .container {
+                max-width:980px;
+                margin:32px auto;
+                padding:0 28px 60px;
+            }
+            header{border-radius:18px;margin:0 32px}
+            .app{height:calc(100vh - 140px); margin: 32px;}
+            .intro p{font-size:1.05rem}
+            .card{border-radius:18px;padding:0}
+            .input-wrap{padding:18px}
+            .chat-input input{height:56px}
+            .send-btn{width:60px;height:56px;border-radius:16px}
+            #chat-window{padding:18px}
+            .fs-close { width:52px; height:52px; border-radius:12px; }
         }
-        .chat-input-area input {
-            flex-grow: 1;
-            border: 1.3px solid #cfd5e6;
-            border-radius: 24px;
-            padding: 16px 22px;
-            font-size: 1em;
-            transition: border-color 0.18s, box-shadow 0.18s;
-            background: #f7fafd;
-        }
-        .chat-input-area input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 8px rgba(52,103,217,0.11);
-        }
-        .site-footer {
-            background: linear-gradient(90deg, #232d46, #334877 90%);
-            color: #e7eaf1;
-            padding: 40px 0 21px;
-            font-size: 0.97em;
-            box-shadow: 0 -4px 22px rgba(52,103,217,0.1);
-        }
-        .footer-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 26px;
-            max-width: 900px;
-            margin: 0 auto 20px;
-            padding: 0 18px;
-        }
-        .site-footer h4 {
-            color: var(--secondary-color);
-            font-weight: 700;
-        }
-        .site-footer ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
-        .site-footer li {
-            margin-bottom: 8px;
-        }
-        .site-footer a {
-            color: #e7eaf1;
-            text-decoration: none;
-            border-bottom: 1px dashed #ffd789;
-            transition: color 0.2s;
-        }
-        .site-footer a:hover {
-            color: #ffcd68;
-        }
-        .footer-note {
-            text-align: center;
-            color: #b6bac8;
-            margin-top: 15px;
-            font-size: 0.93em;
-        }
-        #back-to-top-btn {
-            display: none;
-            position: fixed;
-            bottom: 26px;
-            right: 24px;
-            z-index: 999;
-            background: var(--secondary-color);
-            color: var(--text-main);
-            cursor: pointer;
-            padding: 14px 18px;
-            border-radius: 50px;
-            font-size: 1.4em;
-            box-shadow: 0 2px 16px rgba(52,103,217,0.13);
-            transition: background 0.2s, opacity 0.2s;
-        }
-        #back-to-top-btn:hover {
-            background: #ff822e;
-            opacity: 0.93;
-        }
-        @media only screen and (max-width: 700px) {
-            .container { padding: 0 8px 60px; }
-            .card { padding: 20px 10px; }
-            .chat-window { padding: 8px; }
-            .chat-input-area input { padding: 10px 14px; }
-        }
-        @media only screen and (max-width: 440px) {
-            .chat-window { height: 260px; }
-            .card { padding: 10px; }
-            header { padding: 1.1rem 0.3rem; }
-            header h1 { font-size: 1.6em; }
-            .chat-input-area button { padding: 0 10px; font-size: 0.9em; }
+
+        /* Accessibility / reduced motion */
+        @media (prefers-reduced-motion: reduce){
+            * {transition:none !important}
         }
     </style>
 </head>
-<body id="page-top">
-    <header>
-        <a href="/" class="home-btn" title="Về trang chủ">🏠</a>
+<body>
+    <header id="site-header">
+        <a href="/" class="home-btn" title="Về trang chủ" aria-label="Về trang chủ">🏠</a>
         <h1>Trợ lý Học Scratch</h1>
+
+        <!-- Fullscreen toggle button -->
+        <button id="fs-toggle" class="fs-btn" aria-pressed="false" title="Mở chế độ toàn màn hình" aria-label="Mở chế độ toàn màn hình">
+            <!-- expand icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 9V3h6"></path>
+                <path d="M21 15v6h-6"></path>
+                <path d="M21 3l-8 8"></path>
+                <path d="M3 21l8-8"></path>
+            </svg>
+        </button>
     </header>
 
-    <div class="container">
-        <section id="ai-chatbot-card" class="card">
-           <h2>
-  <span style="display:inline-flex;align-items:center;">
-    <svg width="40" height="40" viewBox="0 0 48 48" fill="none" style="margin-right:12px;vertical-align:middle;">
-      <rect x="8" y="14" width="32" height="24" rx="12" fill="#1479ff"/>
-      <rect x="16" y="22" width="16" height="8" rx="4" fill="#fff"/>
-      <circle cx="18" cy="26" r="2" fill="#1479ff"/>
-      <circle cx="30" cy="26" r="2" fill="#1479ff"/>
-      <rect x="21" y="8" width="6" height="6" rx="3" fill="#ffa940"/>
-      <rect x="29" y="8" width="6" height="6" rx="3" fill="#ffa940"/>
-      <rect x="23" y="5" width="2" height="4" rx="1" fill="#1479ff"/>
-      <rect x="31" y="5" width="2" height="4" rx="1" fill="#1479ff"/>
-    </svg>
-    Trợ lý Scratch
-  </span>
-</h2>
-            <p>
-                Xin chào! Mình là Mentor Scratch, người bạn đồng hành của bạn trên hành trình khám phá lập trình Scratch.<br>
-                Bạn có câu hỏi nào, hay muốn bắt đầu một dự án thú vị? Hãy trò chuyện cùng mình nhé!
-            </p>
-            <div id="chat-window" class="chat-window">
+    <main class="app" role="main" id="app-root">
+        <section class="card" aria-labelledby="chat-title">
+            <div class="intro" id="chat-title">
+                <div style="flex:1">
+                    <div class="title">Trợ lý Scratch</div>
+                    <p class="desc">Xin chào! Mình là Mentor Scratch — hỏi gì cứ hỏi, mình sẽ trả lời bằng ngôn ngữ dễ hiểu. Giao diện đã tối ưu cho điện thoại.</p>
+                </div>
+                <div style="flex:0 0 auto;align-self:center">
+                    <!-- small icon -->
+                    <svg width="44" height="44" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                      <rect x="8" y="14" width="32" height="24" rx="12" fill="#1479ff"/>
+                      <rect x="16" y="22" width="16" height="8" rx="4" fill="#fff"/>
+                      <circle cx="18" cy="26" r="2" fill="#1479ff"/>
+                      <circle cx="30" cy="26" r="2" fill="#1479ff"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div id="chat-window" aria-live="polite" aria-relevant="additions">
                 <div class="chat-message ai-message">
                     Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?
                 </div>
             </div>
-            <div class="chat-input-area">
-                <input type="text" id="user-input" placeholder="Đặt câu hỏi bất kỳ...">
-                <button id="send-button">Gửi</button>
+
+            <div class="input-wrap">
+                <div class="hint">Nhập câu hỏi hoặc mô tả dự án, sau đó nhấn Gửi</div>
+                <div class="chat-input" role="form" aria-label="Khu vực nhập chat">
+                    <input id="user-input" type="text" inputmode="text" autocomplete="off" placeholder="Đặt câu hỏi bất kỳ..." aria-label="Nội dung tin nhắn">
+                    <button id="send-button" class="send-btn" aria-label="Gửi tin nhắn" title="Gửi">
+                        <!-- send icon -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M22 2L11 13"></path>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </section>
-    </div>
+    </main>
 
-    <footer class="site-footer"></footer>
-    <a href="#page-top" id="back-to-top-btn" title="Lên đầu trang">⬆️</a>
+    <!-- fullscreen close button (visible only in fullscreen) -->
+    <button id="fs-close" class="fs-close" aria-label="Thoát toàn màn hình" title="Thoát toàn màn hình">✕</button>
 
+    <footer style="display:none"></footer>
+
+    <!-- Small script to improve mobile UX: auto-scroll, input focus on tap send, handle Enter key, fullscreen toggle -->
     <script>
-    // Script cho các chức năng chung (Footer, Back-to-Top)
-    document.addEventListener('DOMContentLoaded', function() {
-        const backToTopBtn = document.getElementById("back-to-top-btn");
-        window.onscroll = () => {
-            backToTopBtn.style.display = (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) ? "block" : "none";
+    (function(){
+        const chatWindow = document.getElementById('chat-window');
+        const input = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-button');
+        const app = document.getElementById('app-root');
+        const fsToggle = document.getElementById('fs-toggle');
+        const fsClose = document.getElementById('fs-close');
+        const header = document.getElementById('site-header');
+
+        function scrollToBottom(smooth=true){
+            try {
+                if (smooth) chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
+                else chatWindow.scrollTop = chatWindow.scrollHeight;
+            } catch(e){ chatWindow.scrollTop = chatWindow.scrollHeight; }
+        }
+
+        // initial scroll
+        setTimeout(()=>scrollToBottom(false), 100);
+
+        // send handler (hooks into existing chatbot.js if present)
+        function sendMessage(){
+            const text = input.value.trim();
+            if (!text) return;
+            // add user message UI
+            const userBubble = document.createElement('div');
+            userBubble.className = 'chat-message user-message';
+            userBubble.textContent = text;
+            chatWindow.appendChild(userBubble);
+            input.value = '';
+            scrollToBottom();
+
+            // If chatbot.js provides a global sendToBot function, call it; otherwise, add placeholder reply
+            if (typeof window.sendToBot === 'function') {
+                window.sendToBot(text);
+            } else if (typeof window.handleChatInput === 'function') {
+                window.handleChatInput(text);
+            } else {
+                setTimeout(()=>{
+                    const ai = document.createElement('div');
+                    ai.className = 'chat-message ai-message';
+                    ai.textContent = 'Mình đã nhận được câu hỏi của bạn: "' + text + '". (Bạn chưa kết nối chatbot thực tế)';
+                    chatWindow.appendChild(ai);
+                    scrollToBottom();
+                }, 700);
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+
+        input.addEventListener('keydown', function(e){
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Mobile: focus input when tapping chat area
+        chatWindow.addEventListener('click', () => { input.focus(); });
+
+        // expose small helper so external scripts can append messages and auto-scroll
+        window.appendBotMessage = function(text){
+            const ai = document.createElement('div');
+            ai.className = 'chat-message ai-message';
+            if (typeof text === 'string') ai.textContent = text;
+            else ai.appendChild(text);
+            chatWindow.appendChild(ai);
+            scrollToBottom();
         };
 
-        const footer = document.querySelector('.site-footer');
-        if (footer) {
-            footer.innerHTML = `
-                <div class="container">
-                    <div class="footer-grid">
-                        <div>
-                            
-                            <h4>Liên hệ</h4>
-                            <ul>
-                                <li>Email: <a href="mailto:vanhien.art@gmail.com">vanhien.art@gmail.com</a></li>
-                                <li>Facebook: <a href="https://www.facebook.com/nung.hien" target="_blank">https://www.facebook.com/nung.hien</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="footer-note">
-                        © 2025 Mentor Scratch. Website hỗ trợ học tập phi lợi nhuận. Made with ❤️ by Nung Van Hien.
-                    </div>
-                </div>
-            `;
+        // Fullscreen toggle (CSS-based overlay). Also hide header visually.
+        function enterFullscreenMode(){
+            app.classList.add('fullscreen');
+            header.classList.add('hidden');
+            fsToggle.setAttribute('aria-pressed','true');
+            fsToggle.title = 'Thoát chế độ toàn màn hình';
+            fsClose.classList.add('show');
+            // focus input for quick typing
+            setTimeout(()=>{ input.focus(); scrollToBottom(true); }, 120);
         }
-    });
+        function exitFullscreenMode(){
+            app.classList.remove('fullscreen');
+            header.classList.remove('hidden');
+            fsToggle.setAttribute('aria-pressed','false');
+            fsToggle.title = 'Mở chế độ toàn màn hình';
+            fsClose.classList.remove('show');
+            // restore focus to input
+            setTimeout(()=>{ input.focus(); scrollToBottom(true); }, 120);
+        }
+        fsToggle.addEventListener('click', function(){
+            const isOn = app.classList.contains('fullscreen');
+            if (isOn) exitFullscreenMode();
+            else enterFullscreenMode();
+        });
+        fsClose.addEventListener('click', exitFullscreenMode);
+
+        // allow ESC to exit fullscreen
+        window.addEventListener('keydown', function(e){
+            if (e.key === 'Escape' && app.classList.contains('fullscreen')) {
+                exitFullscreenMode();
+            }
+        });
+
+        // On resize (keyboard show/hide), keep view scrolled to bottom
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(()=> scrollToBottom(true), 150);
+        }, {passive:true});
+
+        // Optional: attempt browser Fullscreen API if you want real fullscreen (commented by default)
+        // function requestBrowserFullscreen() {
+        //     const el = document.documentElement;
+        //     if (el.requestFullscreen) el.requestFullscreen();
+        //     else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        // }
+        // function exitBrowserFullscreen() {
+        //     if (document.exitFullscreen) document.exitFullscreen();
+        //     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        // }
+        // You can combine CSS fullscreen with the Fullscreen API by calling requestBrowserFullscreen() inside enterFullscreenMode().
+
+        // Backwards compatibility: if external chatbot script wants to append nodes & control scroll,
+        // it can call window.appendBotMessage(...) which we provide above.
+
+    })();
     </script>
+
+    <!-- existing chatbot integration (kept) -->
     <script src="../shared/chatbot.js"></script>
 </body>
 </html>
-
