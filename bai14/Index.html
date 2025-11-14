@@ -6,7 +6,6 @@
     <title>Bài 14: Giải quyết vấn đề</title>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
     <script>
         window.lessonId = 'giai-quyet-van-de';
     </script>
@@ -21,54 +20,244 @@
             --correct-color: #4caf50;
             --incorrect-color: #f44336;
         }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.7; background-color: var(--bg-color); color: var(--text-color); margin: 0; }
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
-        header { background-color: var(--primary-color); color: white; padding: 1.5rem 1rem; text-align: center; margin-bottom: 30px; position: relative; }
-        header h1 { margin: 0; font-size: 2.5em; }
-        .card { background-color: var(--card-bg-color); border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 30px; }
-        h2, h3, h4 { color: var(--primary-color); }
-        h2 { border-bottom: 3px solid var(--secondary-color); padding-bottom: 10px; margin-top: 0; }
-        button { background-color: var(--secondary-color); color: white; border: none; padding: 10px 15px; font-size: 1em; border-radius: 5px; cursor: pointer; transition: all 0.3s ease; margin: 5px; }
-        button:hover { background-color: #fb8c00; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-        
-        .home-btn { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); font-size: 28px; color: white; text-decoration: none; opacity: 0.8; }
-        
-        /* Phần I: Robot Maze */
-        .maze-container { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: flex-start; }
-        #maze-grid { display: grid; border: 2px solid var(--primary-color); background-color: #fff; }
-        .maze-cell { width: 40px; height: 40px; border: 1px solid #e0e0e0; position: relative; }
-        .wall { background-color: #424242; }
-        .robot { font-size: 24px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(0deg); transition: transform 0.3s linear; }
-        .goal { font-size: 24px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .controls h4, .sensors h4 { margin-top: 0; margin-bottom: 10px; }
-        .sensors p { margin: 5px 0; }
-        #maze-feedback { margin-top: 15px; font-weight: bold; color: var(--correct-color); }
-
-        /* Phần II: Kéo thả quy trình */
-        .process-dnd { display: flex; justify-content: space-between; gap: 20px; }
-        .draggable-steps, .drop-steps { width: 48%; }
-        .draggable-step { background-color: #ffe0b2; border: 1px solid var(--secondary-color); padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: grab; }
-        .drop-step { border: 2px dashed #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; min-height: 40px; }
-        .drop-step.over { background-color: #fff3e0; }
-
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .card {
+            background-color: var(--card-bg-color);
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        h2, h3, h4 {
+            color: var(--primary-color);
+        }
+        h2 {
+            border-bottom: 3px solid var(--secondary-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        button:hover:not(:disabled) {
+            background-color: #fb8c00;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .home-btn {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            font-size: 28px;
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+        }
+        /* Robot Maze */
+        .maze-container {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        #maze-grid {
+            display: grid;
+            border: 2px solid var(--primary-color);
+            background-color: #fff;
+        }
+        .maze-cell {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #e0e0e0;
+            position: relative;
+        }
+        .wall {
+            background-color: #424242;
+        }
+        .robot {
+            font-size: 24px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            transition: transform 0.3s linear;
+        }
+        .goal {
+            font-size: 24px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .controls h4, .sensors h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .sensors p {
+            margin: 5px 0;
+        }
+        #maze-feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            color: var(--correct-color);
+        }
+        /* Kéo thả quy trình */
+        .process-dnd {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .draggable-steps, .drop-steps {
+            width: 48%;
+        }
+        .draggable-step {
+            background-color: #ffe0b2;
+            border: 1px solid var(--secondary-color);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: grab;
+            user-select: none;
+        }
+        .drop-step {
+            border: 2px dashed #ccc;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            min-height: 40px;
+            position: relative;
+        }
+        .drop-step.over {
+            background-color: #fff3e0;
+        }
         /* Luyện tập */
-        .feedback { margin-top: 10px; font-weight: bold; }
-        .feedback.correct { color: var(--correct-color); }
-        .feedback.incorrect { color: var(--incorrect-color); }
-        .exercise-item { border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px; }
-
-        /* CSS Chatbot, Footer, Back-to-Top */
-        .chat-window { height: 300px; border: 1px solid #ccc; padding: 10px; overflow-y: auto; margin-bottom: 10px; }
-        .chat-message { margin-bottom: 10px; } .user-message { text-align: right; }
-        .ai-message { background-color: #f1f1f1; padding: 10px; border-radius: 8px; display: inline-block; max-width: 90%; text-align: left; }
-        .chat-input-area { display: flex; gap: 10px; } .chat-input-area input { flex-grow: 1; }
-        .site-footer { background-color: #333; color: #f1f1f1; padding: 30px 0; font-size: 0.9em; }
-        .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .site-footer h4 { color: var(--secondary-color); } .site-footer ul { list-style-type: none; padding: 0; }
-        .site-footer a { color: #f1f1f1; text-decoration: none; } .site-footer a:hover { color: var(--secondary-color); }
-        #back-to-top-btn { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 999; background-color: var(--secondary-color); color: white; cursor: pointer; padding: 10px; border-radius: 50%; font-size: 18px; width: 50px; height: 50px; text-align: center; line-height: 30px; text-decoration: none; border: none;}
-        @media (max-width: 768px) { .maze-container, .process-dnd { grid-template-columns: 1fr; flex-direction: column; } }
+        .feedback {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .feedback.correct {
+            color: var(--correct-color);
+        }
+        .feedback.incorrect {
+            color: var(--incorrect-color);
+        }
+        .exercise-item {
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        /* Chatbot, Footer, Back-to-Top */
+        .chat-window {
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        .chat-message {
+            margin-bottom: 10px;
+        }
+        .user-message {
+            text-align: right;
+        }
+        .ai-message {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+            max-width: 90%;
+            text-align: left;
+        }
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input-area input {
+            flex-grow: 1;
+        }
+        .site-footer {
+            background-color: #333;
+            color: #f1f1f1;
+            padding: 30px 0;
+            font-size: 0.9em;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .site-footer h4 {
+            color: var(--secondary-color);
+        }
+        .site-footer ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .site-footer a {
+            color: #f1f1f1;
+            text-decoration: none;
+        }
+        .site-footer a:hover {
+            color: var(--secondary-color);
+        }
+        #back-to-top-btn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+            background-color: var(--secondary-color);
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            font-size: 25px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+            border: none;
+        }
+        @media (max-width: 768px) {
+            .maze-container, .process-dnd {
+                grid-template-columns: 1fr !important;
+                flex-direction: column;
+            }
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body id="page-top">
@@ -131,7 +320,7 @@
                 <li><strong>Vấn đề:</strong> Là một việc cần làm, một nhiệm vụ cần thực hiện để đi từ trạng thái ban đầu đến trạng thái mong muốn.</li>
                 <li><strong>Input:</strong> Là các thông tin đầu vào cần thiết để giải quyết vấn đề (ví dụ: kích thước mê cung, vị trí tường).</li>
                 <li><strong>Output:</strong> Là kết quả, mục tiêu cần đạt được sau khi giải quyết vấn đề (ví dụ: robot đến được đích).</li>
-                <li><strong>Thuật toán (Algorithm):</strong> Là một dãy hữu hạn các bước (chỉ dẫn) rõ ràng, theo một thứ tự nhất định để thực hiện một nhiệm vụ hoặc giải quyết một vấn đề.</li>
+                <li><strong>Thuật toán (Algorithm):</strong> Là một dãy hữu hạn các bước (chỉ dẫn) rõ ràng, theo một thứ tự nhất định để thực hiện một nhiệm vụ.</li>
                 <li><strong>Quy trình giải quyết vấn đề gồm 4 bước:</strong>
                     <ol>
                         <li>Xác định vấn đề (Input/Output là gì?).</li>
@@ -208,7 +397,7 @@
         const directions = [[1, 0], [0, 1], [-1, 0], [0, -1]]; // dx, dy for each dir
         
         function createMaze() {
-            mazeGrid.innerHTML = ''; // Clear old maze
+            mazeGrid.innerHTML = '';
             mazeGrid.style.gridTemplateColumns = `repeat(${MAZE_WIDTH}, 40px)`;
             for (let y = 0; y < MAZE_HEIGHT; y++) {
                 for (let x = 0; x < MAZE_WIDTH; x++) {
@@ -221,21 +410,22 @@
                     mazeGrid.appendChild(cell);
                 }
             }
-            robot = { x: 1, y: 1, dir: 0 }; // Reset robot state
+            robot = { x: 1, y: 1, dir: 0 };
             updateSensors();
             updateRobotIcon();
             mazeFeedback.textContent = '';
+            moveBtn.disabled = leftBtn.disabled = rightBtn.disabled = false;
         }
 
         function isWall(x, y) {
-            if (y < 0 || y >= MAZE_HEIGHT || x < 0 || x >= MAZE_WIDTH) return true; // Bounds check
+            if (y < 0 || y >= MAZE_HEIGHT || x < 0 || x >= MAZE_WIDTH) return true;
             return mazeLayout[y][x] === 1;
         }
 
         function updateSensors() {
             const [dx, dy] = directions[robot.dir];
-            const leftDir = (robot.dir + 3) % 4; // Turn left
-            const rightDir = (robot.dir + 1) % 4; // Turn right
+            const leftDir = (robot.dir + 3) % 4;
+            const rightDir = (robot.dir + 1) % 4;
             const [ldx, ldy] = directions[leftDir];
             const [rdx, rdy] = directions[rightDir];
 
@@ -245,21 +435,20 @@
         }
 
         function updateRobotIcon() {
-            const robotIcon = document.getElementById('robot-icon');
-            if (robotIcon) {
-                 // Remove from old cell
-                const oldCell = robotIcon.parentElement;
-                if(oldCell) oldCell.innerHTML = '';
-            }
-            // Add to new cell
-            const newCell = document.getElementById(`cell-${robot.x}-${robot.y}`);
-            if(newCell) {
-                 newCell.innerHTML = '<span class="robot" id="robot-icon">🤖</span>';
-                 const newRobotIcon = document.getElementById('robot-icon');
-                 newRobotIcon.style.transform = `translate(-50%, -50%) rotate(${robot.dir * 90}deg)`;
+            // Remove old robot icon
+            document.querySelectorAll('.robot').forEach(r => r.remove());
+            // Add robot icon to new cell with direction
+            const cell = document.getElementById(`cell-${robot.x}-${robot.y}`);
+            if(cell) {
+                const robotEl = document.createElement('span');
+                robotEl.className = "robot";
+                robotEl.id = "robot-icon";
+                robotEl.textContent = "🤖";
+                robotEl.style.transform = `translate(-50%, -50%) rotate(${robot.dir * 90}deg)`;
+                cell.appendChild(robotEl);
             }
         }
-        
+
         moveBtn.addEventListener('click', () => {
             const [dx, dy] = directions[robot.dir];
             const nextX = robot.x + dx;
@@ -289,20 +478,31 @@
             updateSensors();
         });
         resetMazeBtn.addEventListener('click', createMaze);
-        
-        createMaze(); // Initial setup
+
+        createMaze();
 
         // --- PHẦN II: KÉO THẢ QUY TRÌNH ---
         let draggedStep = null;
         document.querySelectorAll('.draggable-step').forEach(item => {
-            item.addEventListener('dragstart', e => { draggedStep = e.target; });
+            item.addEventListener('dragstart', e => {
+                draggedStep = e.target;
+            });
         });
         document.querySelectorAll('.drop-step').forEach(zone => {
-            zone.addEventListener('dragover', e => e.preventDefault());
+            zone.addEventListener('dragover', e => {
+                e.preventDefault();
+                if (!zone.querySelector('.draggable-step')) zone.classList.add('over');
+            });
+            zone.addEventListener('dragleave', e => {
+                zone.classList.remove('over');
+            });
             zone.addEventListener('drop', e => {
                 e.preventDefault();
-                if (e.target.classList.contains('drop-step') && !e.target.firstChild.nextSibling) { // Allow drop if only text node exists
-                    e.target.appendChild(draggedStep);
+                zone.classList.remove('over');
+                // Chỉ cho drop nếu vùng chưa có step
+                if (!zone.querySelector('.draggable-step') && draggedStep) {
+                    zone.appendChild(draggedStep);
+                    draggedStep = null;
                 }
             });
         });
@@ -339,11 +539,46 @@
 
         // --- FOOTER & BACK-TO-TOP ---
         const backToTopBtn = document.getElementById("back-to-top-btn");
-        if(backToTopBtn){ window.onscroll = () => { backToTopBtn.style.display = (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) ? "block" : "none"; }; }
+        window.addEventListener('scroll', () => {
+            backToTopBtn.style.display =
+                (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100)
+                ? "block" : "none";
+        });
         const footer = document.querySelector('.site-footer');
-        if (footer) footer.innerHTML = `<div class="container"><div class="footer-grid"><div><h4>Nguồn tham khảo</h4><ul><li>Sách giáo khoa tin học 9 - Bộ sách Kết nối tri thức.</li></ul></div><div><h4>Về trang web</h4><ul><li><a href="/">Về trang danh sách học liệu</a></li></ul></div><div><h4>Bản quyền & Liên hệ</h4><p>&copy; ${new Date().getFullYear()}</p><p>Góp ý: <a href="mailto:gopy@example.com">vanhien1199@gmail.com</a></p></div></div></div>`;
+        if (footer) {
+            footer.innerHTML = `
+            <div class="container">
+                <div class="footer-grid">
+                    <div>
+                        <h4>Nguồn tham khảo</h4>
+                        <ul>
+                            <li>Sách giáo khoa Tin học 9 - Kết nối tri thức với cuộc sống</li>
+                            <li><a href="https://vietjack.com/">Vietjack.com</a></li>
+                            <li><a href="https://hoclieu.vn/">hoclieu.vn</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Liên hệ</h4>
+                        <ul>
+                            <li>Email: hotro@domain.com</li>
+                            <li>ĐT: 0123.456.789</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Mạng xã hội</h4>
+                        <ul>
+                            <li><a href="#">Facebook</a></li>
+                            <li><a href="#">YouTube</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div style="text-align:center; margin-top:20px;">
+                    &copy; 2023 Tin học 9 &mdash; Vanhien1199-art. All rights reserved.
+                </div>
+            </div>
+            `;
+        }
     });
     </script>
-  </body>
-
+</body>
 </html>
