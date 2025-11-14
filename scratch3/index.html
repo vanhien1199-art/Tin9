@@ -154,7 +154,7 @@
             align-items:center;
             margin-top:6px;
         }
-        .chat-input-area input{
+        .chat-input-area input[type="text"]{
             flex:1;
             padding:12px 14px;
             border-radius:24px;
@@ -164,8 +164,8 @@
             outline:none;
             transition:box-shadow .12s ease, border-color .12s ease;
         }
-        .chat-input-area input:focus{ box-shadow:0 6px 22px rgba(20,121,255,0.06); border-color:var(--primary); }
-        .chat-input-area button{
+        .chat-input-area input[type="text"]:focus{ box-shadow:0 6px 22px rgba(20,121,255,0.06); border-color:var(--primary); }
+        .chat-input-area button.send-btn{
             background:var(--accent);
             color:#fff;
             border:none;
@@ -174,6 +174,59 @@
             cursor:pointer;
             font-weight:600;
             box-shadow:0 6px 18px rgba(255,169,64,0.12);
+        }
+
+        /* Attachment preview area */
+        .attachment-preview{
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+            align-items:center;
+            margin-bottom:8px;
+        }
+        .attachment-item{
+            background:rgba(16,24,64,0.04);
+            border-radius:10px;
+            padding:6px;
+            display:flex;
+            gap:8px;
+            align-items:center;
+            max-width:70%;
+        }
+        .attachment-thumb{
+            width:56px;
+            height:40px;
+            object-fit:cover;
+            border-radius:6px;
+            background:#fff;
+            display:inline-block;
+            border:1px solid rgba(16,24,64,0.06);
+        }
+        .attachment-meta{
+            display:flex;
+            flex-direction:column;
+            gap:4px;
+            font-size:0.85rem;
+            color:var(--muted);
+            max-width:calc(100% - 64px);
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
+        .attachment-remove{
+            background:transparent;
+            border:none;
+            color:#ff6b6b;
+            cursor:pointer;
+            font-size:1.05rem;
+            padding:4px;
+            margin-left:6px;
+        }
+
+        .upload-progress {
+            font-size:0.9rem;
+            color:var(--muted);
+            margin-top:6px;
         }
 
         /* Fullscreen */
@@ -222,6 +275,7 @@
             .chat-window{ min-height: 260px; padding:10px; }
             #ai-chatbot-card.chat-fullscreen .chat-window{ height: calc(100vh - 170px); }
             .chat-input-area input{ padding:10px 12px; font-size:0.98rem; }
+            .attachment-thumb{ width:48px; height:36px; }
         }
         @media (max-width:420px){
             .chat-window{ min-height:220px; }
@@ -267,9 +321,17 @@
                 </div>
             </div>
 
+            <!-- Attachment preview area (new) -->
+            <div id="attachment-preview" class="attachment-preview" aria-hidden="true" style="display:none"></div>
+
             <div class="chat-input-area" role="form" aria-label="Gửi tin nhắn">
+                <!-- Attach button -->
+                <label for="file-input" class="icon-btn" title="Đính kèm tệp">📎</label>
+                <!-- accept includes image/* for camera access on mobile; capture hint provided so mobile browsers offer camera -->
+                <input type="file" id="file-input" accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/zip" multiple style="display:none" aria-label="Chọn tệp đính kèm" capture="environment">
+
                 <input type="text" id="user-input" placeholder="Đặt câu hỏi bất kỳ..." autocomplete="off" aria-label="Nội dung câu hỏi">
-                <button id="send-button">Gửi</button>
+                <button id="send-button" class="send-btn">Gửi</button>
             </div>
         </section>
     </div>
@@ -287,7 +349,7 @@
     <a href="#page-top" id="back-to-top-btn" title="Lên đầu trang" style="display:none;">⬆️</a>
 
     <script>
-    // Footer, Back-to-Top, Fullscreen, Enter-to-send, Smart-scroll
+    // Footer, Back-to-Top, Fullscreen, Enter-to-send, Smart-scroll, Attachment handling with optional upload endpoint
     document.addEventListener('DOMContentLoaded', function() {
         const backToTopBtn = document.getElementById("back-to-top-btn");
         window.onscroll = () => {
@@ -324,7 +386,7 @@
         toggleBtn.addEventListener('click', openFullscreenMode);
         closeBtn.addEventListener('click', closeFullscreenMode);
 
-        // Enter-to-send (non-intrusive; main send logic should be in chatbot.js)
+        // Enter-to-send (non-intrusive; main send logic should be in chatbot.js for text-only)
         userInput.addEventListener('keydown', function(e){
             if(e.key === 'Enter' && !e.shiftKey){
                 e.preventDefault();
@@ -345,6 +407,330 @@
 
         // iOS momentum
         chatWindow.style.webkitOverflowScrolling = 'touch';
+
+        // --- Attachment handling (supports mobile camera via accept="image/*" + capture) ---
+        const fileInput = document.getElementById('file-input');
+        const previewArea = document.getElementById('attachment-preview');
+
+        // Store attachments in-memory for UI; will be uploaded if endpoint configured.
+        let attachments = []; // each item: { file, url, id }
+
+        function renderAttachments(progressText) {
+            previewArea.innerHTML = '';
+            if (attachments.length === 0) {
+                previewArea.style.display = 'none';
+                previewArea.setAttribute('aria-hidden','true');
+                return;
+            }
+            previewArea.style.display = 'flex';
+            previewArea.setAttribute('aria-hidden','false');
+
+            attachments.forEach(att => {
+                const item = document.createElement('div');
+                item.className = 'attachment-item';
+                item.setAttribute('data-id', att.id);
+
+                if (att.file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.className = 'attachment-thumb';
+                    img.src = att.url;
+                    img.alt = att.file.name;
+                    img.title = att.file.name;
+                    item.appendChild(img);
+                } else {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'attachment-thumb';
+                    placeholder.style.display = 'flex';
+                    placeholder.style.alignItems = 'center';
+                    placeholder.style.justifyContent = 'center';
+                    placeholder.style.fontSize = '0.9rem';
+                    placeholder.textContent = '📄';
+                    item.appendChild(placeholder);
+                }
+
+                const meta = document.createElement('div');
+                meta.className = 'attachment-meta';
+                const name = document.createElement('div');
+                name.textContent = att.file.name;
+                const size = document.createElement('div');
+                size.style.fontSize = '0.78rem';
+                size.style.color = 'var(--muted)';
+                size.textContent = (att.file.size < 1024*1024) ? (Math.round(att.file.size/1024)+' KB') : (Math.round(att.file.size/(1024*1024))+' MB');
+                meta.appendChild(name);
+                meta.appendChild(size);
+                item.appendChild(meta);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'attachment-remove';
+                removeBtn.title = 'Xóa';
+                removeBtn.innerHTML = '✕';
+                removeBtn.addEventListener('click', () => {
+                    removeAttachment(att.id);
+                });
+                item.appendChild(removeBtn);
+
+                previewArea.appendChild(item);
+            });
+
+            if (progressText) {
+                const prog = document.createElement('div');
+                prog.className = 'upload-progress';
+                prog.textContent = progressText;
+                previewArea.appendChild(prog);
+            }
+        }
+
+        function removeAttachment(id) {
+            const idx = attachments.findIndex(a => a.id === id);
+            if (idx !== -1) {
+                const a = attachments[idx];
+                if (a.url && a.file.type.startsWith('image/')) {
+                    URL.revokeObjectURL(a.url);
+                }
+                attachments.splice(idx,1);
+                renderAttachments();
+            }
+        }
+
+        function addFiles(fileList) {
+            const maxFiles = 8;
+            const maxSizePerFile = 25 * 1024 * 1024; // 25MB per file
+            for (let i=0;i<fileList.length;i++) {
+                if (attachments.length >= maxFiles) break;
+                const f = fileList[i];
+                if (f.size > maxSizePerFile) {
+                    alert('Tệp "'+f.name+'" quá lớn (tối đa 25MB).');
+                    continue;
+                }
+                const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+                const att = { id, file: f, url: null };
+                if (f.type.startsWith('image/')) {
+                    att.url = URL.createObjectURL(f);
+                }
+                attachments.push(att);
+            }
+            renderAttachments();
+        }
+
+        fileInput.addEventListener('change', function(e){
+            if (!e.target.files) return;
+            addFiles(e.target.files);
+            // clear file input so same file can be re-selected if removed
+            fileInput.value = '';
+        });
+
+        // Drag & drop support (desktop)
+        const dropTarget = chatCard;
+        dropTarget.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+        dropTarget.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer && e.dataTransfer.files) {
+                addFiles(e.dataTransfer.files);
+            }
+        });
+
+        // Helper to create a chat message showing uploads/images
+        function appendUserMessage(text, imageUrls, fileLinks) {
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-message user-message';
+            userMsg.innerText = text;
+
+            if ((imageUrls && imageUrls.length) || (fileLinks && fileLinks.length)) {
+                const wrapper = document.createElement('div');
+                wrapper.style.marginTop = '8px';
+                wrapper.style.display = 'flex';
+                wrapper.style.flexDirection = 'column';
+                wrapper.style.gap = '6px';
+
+                (imageUrls || []).forEach(url => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = 'image';
+                    img.style.maxWidth = '220px';
+                    img.style.borderRadius = '8px';
+                    img.style.display = 'block';
+                    a.appendChild(img);
+                    wrapper.appendChild(a);
+                });
+
+                (fileLinks || []).forEach(link => {
+                    const fileLink = document.createElement('a');
+                    fileLink.href = link.url;
+                    fileLink.target = '_blank';
+                    fileLink.rel = 'noopener noreferrer';
+                    fileLink.textContent = 'Tải: ' + link.name;
+                    fileLink.style.color = '#fff';
+                    fileLink.style.textDecoration = 'underline';
+                    wrapper.appendChild(fileLink);
+                });
+
+                userMsg.appendChild(wrapper);
+            }
+
+            chatWindow.appendChild(userMsg);
+            chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
+        }
+
+        // Upload helper using XMLHttpRequest so we can track progress.
+        // If window.UPLOAD_ENDPOINT is not set, we'll fallback to client blob URLs.
+        function uploadAttachmentsWithProgress(formData, onProgress) {
+            return new Promise((resolve, reject) => {
+                const endpoint = window.UPLOAD_ENDPOINT || null;
+                if (!endpoint) {
+                    reject(new Error('NO_ENDPOINT'));
+                    return;
+                }
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', endpoint, true);
+                // optional: set auth header if provided
+                if (window.UPLOAD_AUTH_TOKEN) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + window.UPLOAD_AUTH_TOKEN);
+                }
+
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable && typeof onProgress === 'function') {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        onProgress(percent);
+                    }
+                };
+
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const json = JSON.parse(xhr.responseText);
+                            resolve(json);
+                        } catch (err) {
+                            // If server responded with plain URL or text, return that
+                            resolve({ urls: [xhr.responseText] });
+                        }
+                    } else {
+                        reject(new Error('Upload failed: ' + xhr.status));
+                    }
+                };
+
+                xhr.onerror = function() {
+                    reject(new Error('Network error during upload'));
+                };
+
+                xhr.send(formData);
+            });
+        }
+
+        // When send button pressed, handle attachments (upload if endpoint configured) then create message
+        sendBtn.addEventListener('click', async function(e){
+            const textValue = userInput.value && userInput.value.trim() ? userInput.value.trim() : '';
+
+            if (attachments.length === 0) {
+                // No attachments: let chatbot.js handle text-only sends.
+                // We do not prevent default here to not interfere.
+                return;
+            }
+
+            // If there's an upload endpoint configured, upload files first.
+            if (window.UPLOAD_ENDPOINT) {
+                // Prepare FormData
+                const fd = new FormData();
+                if (textValue) fd.append('message', textValue);
+                attachments.forEach((att, idx) => {
+                    fd.append('files[]', att.file, att.file.name);
+                });
+
+                // Show uploading progress in preview area
+                renderAttachments('Đang tải lên... 0%');
+
+                try {
+                    const response = await uploadAttachmentsWithProgress(fd, (percent) => {
+                        renderAttachments('Đang tải lên... ' + percent + '%');
+                    });
+
+                    // Normalize response to array of URLs if possible
+                    let urls = [];
+                    if (Array.isArray(response)) {
+                        urls = response;
+                    } else if (response && Array.isArray(response.urls)) {
+                        urls = response.urls;
+                    } else if (typeof response === 'string') {
+                        urls = [response];
+                    } else if (response && response.url) {
+                        urls = [response.url];
+                    }
+
+                    // Partition urls into images and non-images by extension / heuristics
+                    const imageUrls = [];
+                    const fileLinks = [];
+                    urls.forEach(u => {
+                        const lower = (u || '').toLowerCase();
+                        if (lower.match(/\.(jpg|jpeg|png|gif|webp|avif|bmp)(\?|$)/)) {
+                            imageUrls.push(u);
+                        } else {
+                            fileLinks.push({ url: u, name: u.split('/').pop() });
+                        }
+                    });
+
+                    // Append a user message with uploaded images/links
+                    const textForMessage = textValue || '(Đã gửi tệp)';
+                    appendUserMessage(textForMessage, imageUrls, fileLinks);
+
+                    // Clear attachments and input
+                    attachments.forEach(a => { if (a.url && a.file.type.startsWith('image/')) URL.revokeObjectURL(a.url); });
+                    attachments = [];
+                    renderAttachments();
+
+                    // Provide uploaded URLs globally for chatbot.js or other listeners
+                    window.__lastUploadResponse = { uploaded: urls };
+
+                    // Dispatch event with uploaded URLs so other scripts can integrate (chatbot.js can listen)
+                    const ev = new CustomEvent('attachmentsUploaded', { detail: { urls } });
+                    document.dispatchEvent(ev);
+
+                    // Also clear the input field (chatbot.js may still send text if it handles send click; you may coordinate)
+                    userInput.value = '';
+
+                } catch (err) {
+                    console.error(err);
+                    alert('Không thể tải tệp lên: ' + (err.message || err));
+                    // Fall back to local blob URLs display
+                    const imageUrls = attachments.filter(a => a.file.type.startsWith('image/')).map(a => a.url);
+                    const fileLinks = attachments.filter(a => !a.file.type.startsWith('image/')).map(a => {
+                        const blobUrl = URL.createObjectURL(a.file);
+                        setTimeout(() => URL.revokeObjectURL(blobUrl), 60*1000);
+                        return { url: blobUrl, name: a.file.name };
+                    });
+                    appendUserMessage(textValue || '(Đã gửi tệp)', imageUrls, fileLinks);
+
+                    attachments.forEach(a => { if (a.url && a.file.type.startsWith('image/')) URL.revokeObjectURL(a.url); });
+                    attachments = [];
+                    renderAttachments();
+                    userInput.value = '';
+                }
+
+                return;
+            }
+
+            // If no endpoint configured, fallback: show inline blob URLs (client-only)
+            const imageUrls = attachments.filter(a => a.file.type.startsWith('image/')).map(a => a.url);
+            const fileLinks = attachments.filter(a => !a.file.type.startsWith('image/')).map(a => {
+                const blobUrl = URL.createObjectURL(a.file);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60*1000);
+                return { url: blobUrl, name: a.file.name };
+            });
+
+            appendUserMessage(textValue || '(Đã gửi tệp)', imageUrls, fileLinks);
+
+            // Clear attachments and input
+            attachments.forEach(a => { if (a.url && a.file.type.startsWith('image/')) URL.revokeObjectURL(a.url); });
+            attachments = [];
+            renderAttachments();
+            userInput.value = '';
+
+            // Provide a simple event so chatbot.js can be aware (it should still handle text send separately)
+            const dispatched = new CustomEvent('attachmentsSent', { detail: { uploaded: false, count: 0 } });
+            document.dispatchEvent(dispatched);
+        });
     });
     </script>
 
@@ -352,5 +738,3 @@
     <script src="../shared/chatbot.js"></script>
 </body>
 </html>
-
-
