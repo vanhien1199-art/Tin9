@@ -106,11 +106,11 @@ export async function onRequest(context) {
 
     if (!apiKey) {
         console.error("LỖI CẤU HÌNH: GOOGLE_API_KEY chưa được thiết lập!");
-        return new Response(JSON.stringify({ error: 'Lỗi cấu hình máy chủ.' }), { status: 500 });
+        return new Response(JSON.stringify({ error: 'Lỗi cấu hình máy chủ: Thiếu API Key.' }), { status: 500 });
     }
 
     try {
-        // 1. Nhận thêm `attachments` từ request
+        // 1. Nhận attachments (mới)
         const { question, lesson_id, attachments } = await context.request.json();
         
         // Kiểm tra phải có text hoặc ảnh
@@ -120,26 +120,29 @@ export async function onRequest(context) {
         
         const genAI = new GoogleGenerativeAI(apiKey);
         
-        // 2. Lấy system prompt và đặt nó vào `systemInstruction`
+        // 2. Lấy system prompt (như file cũ)
         const systemPrompt = lessonPrompts[lesson_id] || lessonPrompts['default'];
         
+        // 3. Lấy model MÀ KHÔNG CÓ systemInstruction (như file cũ)
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.5-flash-image-preview",
-            systemInstruction: systemPrompt // Đặt system prompt ở đây
+            model: "gemini-2.5-flash-image-preview"
         });
 
-        // 3. Xây dựng nội dung gửi cho AI (gồm text và các phần ảnh)
+        // 4. Xây dựng mảng userContent (mới)
         const userContent = [];
         
-        // Thêm phần text
+        // 5. [ĐIỀU CHỈNH QUAN TRỌNG]
+        // Thêm system prompt vào ĐẦU MẢNG, giống cách file cũ của bạn hoạt động
+        userContent.push({ text: systemPrompt });
+
+        // 6. Thêm câu hỏi của người dùng (nếu có)
         if (question) {
             userContent.push({ text: question });
         }
 
-        // Thêm các phần ảnh (nếu có)
+        // 7. Thêm các ảnh (nếu có)
         if (attachments && Array.isArray(attachments)) {
             for (const att of attachments) {
-                // Chỉ xử lý những file có base64Data (là ảnh đã được convert)
                 if (att.base64Data) { 
                     userContent.push({
                         inlineData: {
@@ -151,7 +154,7 @@ export async function onRequest(context) {
             }
         }
         
-        // 4. Gọi API với mảng nội dung
+        // 8. Gọi API với mảng nội dung
         const result = await model.generateContent(userContent);
         const response = await result.response;
         const aiResponse = response.text();
@@ -162,11 +165,16 @@ export async function onRequest(context) {
 
     } catch (error) {
         console.error('Lỗi xử lý function:', error);
-        // Trả về lỗi chi tiết hơn nếu có thể
-        const errorMessage = error.message || 'Lỗi không xác định từ máy chủ AI.';
-        // Nếu lỗi do Google API trả về (ví dụ: an toàn, nội dung không phù hợp)
+        
+        let errorMessage = error.message || 'Lỗi không xác định từ máy chủ AI.';
+        
+        // Cung cấp thông báo lỗi rõ ràng hơn
         if (error.response && error.response.promptFeedback) {
-             return new Response(JSON.stringify({ error: 'Nội dung bị chặn, có thể do vi phạm an toàn.' }), { status: 400 });
+             errorMessage = 'Nội dung bị chặn, có thể do vi phạm an toàn.';
+             return new Response(JSON.stringify({ error: errorMessage }), { status: 400 });
+        }
+        if (error.message.includes('API key')) {
+            errorMessage = 'Lỗi xác thực: API Key không hợp lệ hoặc đã hết hạn.';
         }
         
         return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
