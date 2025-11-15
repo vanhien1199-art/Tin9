@@ -338,4 +338,329 @@
                 <span class="footer-note">Liên hệ: </span>
                 <li>Facebook: <a href="https://www.facebook.com/nung.hien" target="_blank">https://www.facebook.com/nung.hien</a></li>
             </div>
-            <div class="footer-note
+            <div class="footer-note">© 2025 Mentor Scratch — Website hỗ trợ học tập phi lợi nhuận. Made with ❤️ by Nung Van Hien.</div>
+        </div>
+    </footer>
+
+    <a href="#page-top" id="back-to-top-btn" title="Lên đầu trang" style="display:none;">⬆️</a>
+
+    <script>
+    // Toàn bộ logic của Chatbot, bao gồm UI, Xử lý tệp, và Gửi tin nhắn
+    document.addEventListener('DOMContentLoaded', function() {
+        const backToTopBtn = document.getElementById("back-to-top-btn");
+        window.onscroll = () => {
+            backToTopBtn.style.display = (document.body.scrollTop > 140 || document.documentElement.scrollTop > 140) ? "block" : "none";
+        };
+
+        // === KHAI BÁO BIẾN GIAO DIỆN ===
+        const chatCard = document.getElementById('ai-chatbot-card');
+        const toggleBtn = document.getElementById('toggle-fullscreen-btn');
+        const closeBtn = document.getElementById('close-fullscreen-btn');
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-button');
+        const fileInput = document.getElementById('file-input');
+        const previewArea = document.getElementById('attachment-preview');
+
+        // === LOGIC TOÀN MÀN HÌNH ===
+        function openFullscreenMode() {
+            chatCard.classList.add('chat-fullscreen');
+            toggleBtn.setAttribute('aria-pressed','true');
+            toggleBtn.style.display = 'none';
+            closeBtn.style.display = 'inline-block';
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
+            userInput.focus();
+        }
+        function closeFullscreenMode() {
+            chatCard.classList.remove('chat-fullscreen');
+            toggleBtn.setAttribute('aria-pressed','false');
+            toggleBtn.style.display = 'inline-block';
+            closeBtn.style.display = 'none';
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+        }
+        toggleBtn.addEventListener('click', openFullscreenMode);
+        closeBtn.addEventListener('click', closeFullscreenMode);
+
+        // === LOGIC TỰ CUỘN THÔNG MINH ===
+        const observer = new MutationObserver(() => {
+            const nearBottomThreshold = 120;
+            const distanceFromBottom = chatWindow.scrollHeight - chatWindow.scrollTop - chatWindow.clientHeight;
+            const shouldAutoScroll = distanceFromBottom < nearBottomThreshold;
+            if (shouldAutoScroll) {
+                chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
+            }
+        });
+        observer.observe(chatWindow, { childList:true, subtree:true });
+
+        // iOS momentum
+        chatWindow.style.webkitOverflowScrolling = 'touch';
+
+        // === LOGIC XỬ LÝ TỆP ĐÍNH KÈM (UI) ===
+        
+        // Store attachments in-memory for UI
+        let attachments = []; // each item: { file, url, id }
+
+        function renderAttachments(progressText) {
+            previewArea.innerHTML = '';
+            if (attachments.length === 0) {
+                previewArea.style.display = 'none';
+                previewArea.setAttribute('aria-hidden','true');
+                return;
+            }
+            previewArea.style.display = 'flex';
+            previewArea.setAttribute('aria-hidden','false');
+
+            attachments.forEach(att => {
+                const item = document.createElement('div');
+                item.className = 'attachment-item';
+                item.setAttribute('data-id', att.id);
+
+                if (att.file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.className = 'attachment-thumb';
+                    img.src = att.url;
+                    img.alt = att.file.name;
+                    img.title = att.file.name;
+                    item.appendChild(img);
+                } else {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'attachment-thumb';
+                    placeholder.style.display = 'flex';
+                    placeholder.style.alignItems = 'center';
+                    placeholder.style.justifyContent = 'center';
+                    placeholder.style.fontSize = '0.9rem';
+                    placeholder.textContent = '📄';
+                    item.appendChild(placeholder);
+                }
+
+                const meta = document.createElement('div');
+                meta.className = 'attachment-meta';
+                const name = document.createElement('div');
+                name.textContent = att.file.name;
+                const size = document.createElement('div');
+                size.style.fontSize = '0.78rem';
+                size.style.color = 'var(--muted)';
+                size.textContent = (att.file.size < 1024*1024) ? (Math.round(att.file.size/1024)+' KB') : (Math.round(att.file.size/(1024*1024))+' MB');
+                meta.appendChild(name);
+                meta.appendChild(size);
+                item.appendChild(meta);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'attachment-remove';
+                removeBtn.title = 'Xóa';
+                removeBtn.innerHTML = '✕';
+                removeBtn.addEventListener('click', () => {
+                    removeAttachment(att.id);
+                });
+                item.appendChild(removeBtn);
+
+                previewArea.appendChild(item);
+            });
+
+            if (progressText) {
+                const prog = document.createElement('div');
+                prog.className = 'upload-progress';
+                prog.textContent = progressText;
+                previewArea.appendChild(prog);
+            }
+        }
+
+        function removeAttachment(id) {
+            const idx = attachments.findIndex(a => a.id === id);
+            if (idx !== -1) {
+                const a = attachments[idx];
+                if (a.url && a.file.type.startsWith('image/')) {
+                    URL.revokeObjectURL(a.url);
+                }
+                attachments.splice(idx,1);
+                renderAttachments();
+            }
+        }
+
+        function addFiles(fileList) {
+            const maxFiles = 8;
+            const maxSizePerFile = 25 * 1024 * 1024; // 25MB per file
+            for (let i=0;i<fileList.length;i++) {
+                if (attachments.length >= maxFiles) break;
+                const f = fileList[i];
+                if (f.size > maxSizePerFile) {
+                    alert('Tệp "'+f.name+'" quá lớn (tối đa 25MB).');
+                    continue;
+                }
+                const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+                const att = { id, file: f, url: null };
+                if (f.type.startsWith('image/')) {
+                    att.url = URL.createObjectURL(f);
+                }
+                attachments.push(att);
+            }
+            renderAttachments();
+        }
+
+        fileInput.addEventListener('change', function(e){
+            if (!e.target.files) return;
+            addFiles(e.target.files);
+            fileInput.value = '';
+        });
+
+        // Drag & drop support (desktop)
+        const dropTarget = chatCard;
+        dropTarget.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+        dropTarget.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer && e.dataTransfer.files) {
+                addFiles(e.dataTransfer.files);
+            }
+        });
+
+        // === LOGIC GỬI TIN NHẮN VÀ GỌI AI ===
+
+        /**
+         * Chuyển đổi File object sang Base64 string
+         * @param {File} file - File người dùng chọn
+         * @returns {Promise<String>} - Dữ liệu Base64 (chỉ lấy phần data)
+         */
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    // Cắt bỏ phần "data:image/jpeg;base64,"
+                    const base64String = reader.result.split(',')[1];
+                    resolve(base64String);
+                };
+                reader.onerror = (error) => reject(error);
+            });
+        }
+
+        /**
+         * Thêm tin nhắn vào cửa sổ chat
+         * @param {String} message - Nội dung (HTML hoặc Text)
+         * @param {String} sender - "user" hoặc "ai"
+         * @returns {HTMLElement} - Element của tin nhắn vừa tạo
+         */
+        function appendMessage(message, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-message ${sender}-message`;
+            
+            if (sender === 'ai') {
+                // Dùng thư viện `marked` đã import để render Markdown
+                msgDiv.innerHTML = marked.parse(message);
+            } else {
+                // Tin nhắn của user, chỉ hiển thị text để tránh XSS
+                msgDiv.innerText = message;
+            }
+            
+            chatWindow.appendChild(msgDiv);
+            chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
+            return msgDiv;
+        }
+
+        /**
+         * Xử lý chính khi nhấn nút Gửi
+         */
+        async function handleSend() {
+            const textValue = userInput.value.trim();
+            
+            // Lấy danh sách tệp đính kèm (biến `attachments` từ scope này)
+            const currentAttachments = [...attachments];
+
+            if (!textValue && currentAttachments.length === 0) {
+                return; // Không gửi nếu không có gì
+            }
+            
+            // 1. Vô hiệu hóa input và xóa tệp đính kèm
+            userInput.value = '';
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+            
+            // Xóa các tệp khỏi UI
+            if (currentAttachments.length > 0) {
+                 attachments.length = 0; // Xóa mảng gốc
+                 renderAttachments(); // Cập nhật lại UI
+            }
+
+            // 2. Hiển thị tin nhắn của người dùng
+            let userMessageContent = textValue;
+            if (currentAttachments.length > 0) {
+                 const fileNames = currentAttachments.map(a => a.file.name).join(', ');
+                 userMessageContent += `\n(Đã đính kèm: ${fileNames})`;
+            }
+            appendMessage(userMessageContent, 'user');
+            
+            // 3. Hiển thị thông báo "AI đang trả lời..."
+            const loadingMsg = appendMessage('Mentor Scratch đang suy nghĩ... 🤖', 'ai');
+
+            // 4. Chuẩn bị payload để gửi lên backend
+            const payload = {
+                question: textValue,
+                lesson_id: 'default', // Bạn có thể thay đổi nếu cần
+                attachments: [] // Mảng chứa các tệp đã convert
+            };
+
+            try {
+                // 5. Chuyển đổi các tệp đính kèm sang Base64
+                for (const att of currentAttachments) {
+                    // CHỈ GỬI ẢNH: Mô hình AI này chỉ đọc được ảnh
+                    if (att.file.type.startsWith('image/')) {
+                        const base64Data = await fileToBase64(att.file);
+                        payload.attachments.push({
+                            mimeType: att.file.type,
+                            base64Data: base64Data
+                        });
+                        // Hủy bỏ Object URL để giải phóng bộ nhớ
+                        if (att.url) URL.revokeObjectURL(att.url);
+                    }
+                    // Các file khác (PDF, .sb3...) sẽ bị bỏ qua khi gửi cho AI
+                }
+
+                // 6. Gọi Cloudflare Function
+                // !!! THAY ĐỔI URL NÀY NẾU CẦN
+                const response = await fetch('/functions/askAI', { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || `Lỗi ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // 7. Cập nhật tin nhắn "loading" bằng câu trả lời thật
+                // Dùng `marked.parse` để render các định dạng Markdown
+                loadingMsg.innerHTML = marked.parse(data.answer);
+
+            } catch (error) {
+                console.error('Lỗi khi gọi AI:', error);
+                loadingMsg.innerHTML = `<strong>Rất tiếc, đã có lỗi xảy ra:</strong><br>${error.message}`;
+                loadingMsg.style.color = 'red';
+            } finally {
+                // 8. Kích hoạt lại input
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        // === GÁN SỰ KIỆN GỬI ===
+        sendBtn.addEventListener('click', handleSend);
+        
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+
+    }); // Kết thúc DOMContentLoaded
+    </script>
+
+    </body>
+</html>
