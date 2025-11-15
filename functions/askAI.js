@@ -1,7 +1,9 @@
-// File: /scratch3/functions/askAI.js
+// File: /functions/askAI.js
+// Đã cập nhật để xử lý FormData (văn bản + tệp)
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+// --- Định nghĩa System Prompt (Giữ nguyên) ---
 const lessonPrompts = {
     'default': `Bạn là “Mentor Scratch”, một trợ lý AI chuyên gia về lập trình Scratch 3.0.
 Nhiệm vụ của bạn là hướng dẫn, giải thích và truyền cảm hứng cho người mới bắt đầu (đặc biệt là học sinh THCS) học lập trình Scratch.
@@ -101,102 +103,80 @@ Bạn có thể:
 •	Không phán xét, không làm người học nản lòng.`
 };
 
-// Hàm xử lý logic chính (chỉ chạy khi là POST)
-async function handlePostRequest(context) {
+// --- Hàm trợ giúp chuyển đổi File sang định dạng Google AI ---
+/**
+ * Chuyển đổi File (từ FormData) sang định dạng GenerativePart
+ * @param {File} file - Đối tượng File từ formData.getAll('files')
+ * @returns {Promise<{inlineData: {data: string, mimeType: string}}>}
+ */
+async function fileToGenerativePart(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    // btoa() có sẵn trong môi trường Cloudflare Workers
+    const base64Data = btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
+    return {
+        inlineData: {
+            data: base64Data,
+            mimeType: file.type || 'application/octet-stream'
+        },
+    };
+}
+
+
+// --- Xử lý Request ---
+export async function onRequest(context) {
     const apiKey = context.env.GOOGLE_API_KEY;
 
     if (!apiKey) {
         console.error("LỖI CẤU HÌNH: GOOGLE_API_KEY chưa được thiết lập!");
-        return new Response(JSON.stringify({ error: 'Lỗi cấu hình máy chủ: Thiếu API Key.' }), { status: 500 });
+        return new Response(JSON.stringify({ error: 'Lỗi cấu hình máy chủ.' }), { status: 500 });
     }
 
     try {
-        const { question, lesson_id, attachments } = await context.request.json();
-        
-        if (!question && (!attachments || attachments.length === 0)) {
+        // 1. Luôn mong đợi FormData
+        const formData = await context.request.formData();
+
+        const question = formData.get('question') || ''; // Lấy câu hỏi (văn bản)
+        const lesson_id = formData.get('lesson_id') || 'default';
+        const files = formData.getAll('files'); // Lấy tất cả các tệp
+
+        if (!question && (!files || files.length === 0)) {
             return new Response(JSON.stringify({ error: 'Thiếu câu hỏi hoặc tệp đính kèm.' }), { status: 400 });
         }
         
+        // 2. Chuẩn bị cho Google AI
         const genAI = new GoogleGenerativeAI(apiKey);
         const systemPrompt = lessonPrompts[lesson_id] || lessonPrompts['default'];
-        
+
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.5-flash-image-preview"
+            model: "gemini-1.5-flash", // Sử dụng model hỗ trợ multimodal
+            systemInstruction: systemPrompt // Đặt system prompt ở đây
         });
 
-        const userContent = [];
-        userContent.push({ text: systemPrompt });
+        // 3. Chuyển đổi tệp sang Base64
+        const fileParts = await Promise.all(files.map(fileToGenerativePart));
 
-        if (question) {
-            userContent.push({ text: question });
-        }
+        // 4. Tạo prompt (bao gồm cả văn bản và tệp)
+        // Gemini yêu cầu một mảng các "parts"
+        const promptParts = [
+            question, // Phần văn bản
+            ...fileParts // Nối các phần tệp đã chuyển đổi
+        ];
 
-        if (attachments && Array.isArray(attachments)) {
-            for (const att of attachments) {
-                if (att.base64Data) { 
-                    userContent.push({
-                        inlineData: {
-                            mimeType: att.mimeType,
-                            data: att.base64Data
-                        }
-                    });
-                }
-            }
-        }
-        
-        const result = await model.generateContent(userContent);
+        // 5. Gọi API
+        const result = await model.generateContent(promptParts);
         const response = await result.response;
         const aiResponse = response.text();
 
         return new Response(JSON.stringify({ answer: aiResponse }), {
-            headers: { 
-                'Content-Type': 'application/json', 
-                'Access-Control-Allow-Origin': '*'
-            },
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
 
     } catch (error) {
         console.error('Lỗi xử lý function:', error);
-        let errorMessage = error.message || 'Lỗi không xác định.';
-        if (error.response && error.response.promptFeedback) {
-             errorMessage = 'Nội dung bị chặn, có thể do vi phạm an toàn.';
-             return new Response(JSON.stringify({ error: errorMessage }), { status: 400 });
-        }
-        if (error.message.includes('API key')) {
-            errorMessage = 'Lỗi xác thực: API Key không hợp lệ.';
-        }
+        // Cung cấp thông báo lỗi chi tiết hơn nếu ở chế độ debug
+        const errorMessage = (error.message || 'Lỗi không xác định').includes('buffer') 
+            ? 'Lỗi xử lý tệp. Tệp có thể quá lớn hoặc bị hỏng.' 
+            : error.message;
         return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
     }
-}
-
-/**
- * [HÀM CHÍNH]
- * Xử lý các phương thức HTTP
- */
-export async function onRequest(context) {
-    
-    // 1. Xử lý 'OPTIONS' (Preflight)
-    if (context.request.method === 'OPTIONS') {
-        return new Response(null, {
-            status: 204,
-            headers: {
-                'Access-Control-Allow-Origin': '*', 
-                'Access-Control-Allow-Methods': 'POST, OPTIONS', 
-                'Access-Control-Allow-Headers': 'Content-Type',
-            },
-        });
-    }
-
-    // 2. Nếu là 'POST', chạy logic chatbot
-    if (context.request.method === 'POST') {
-        return handlePostRequest(context);
-    }
-
-    // 3. Nếu là GET, trả về lỗi 405
-    return new Response(JSON.stringify({ error: 'Phương thức không được phép.' }), {
-        status: 405,
-        headers: {
-            'Allow': 'POST, OPTIONS',
-        },
-    });
 }
