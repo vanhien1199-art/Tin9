@@ -1,5 +1,288 @@
 <!DOCTYPE html>
 <html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Trợ lý Scratch - Hỏi đáp</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root{
+            --primary: #1479ff;
+            --accent: #ffa940;
+            --bg-start: #f4f7fc;
+            --bg-end: #e6f0ff;
+            --card: #ffffff;
+            --text: #14182a;
+            --muted: #6d758c;
+            --radius: 16px;
+            --shadow-1: 0 6px 24px rgba(20,121,255,0.08);
+            --glass: rgba(255,255,255,0.6);
+        }
+
+        html,body{
+            height:100%;
+            margin:0;
+            font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+            color:var(--text);
+            scroll-behavior:smooth;
+        }
+
+        /* Layout */
+        .container{
+            max-width:980px;
+            margin:20px auto 80px;
+            padding:0 18px;
+        }
+
+        header{
+            background: linear-gradient(90deg, var(--primary), #64b5f6 90%);
+            color:#fff;
+            padding:18px 14px;
+            text-align:center;
+            border-bottom-left-radius:20px;
+            border-bottom-right-radius:20px;
+            box-shadow: var(--shadow-1);
+            position:relative;
+        }
+        .home-btn{
+            position:absolute;
+            left:12px;
+            top:12px;
+            font-size:1.5rem;
+            color:#fff;
+            text-decoration:none;
+            opacity:0.95;
+        }
+        header h1{
+            margin:0;
+            font-size:1.2rem;
+            letter-spacing:-0.5px;
+            font-weight:700;
+        }
+
+        /* Chat card */
+        .card{
+            background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(250,252,255,0.98));
+            border-radius:var(--radius);
+            box-shadow: var(--shadow-1);
+            padding:14px;
+            margin-top:16px;
+            transition:transform .12s ease, box-shadow .12s ease;
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+        }
+        .card:active{ transform:translateY(0); }
+
+        /* Header row */
+        .chat-header-row{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            justify-content:space-between;
+        }
+        #ai-chatbot-card h2{ font-size:1.05rem; margin:0; display:flex; align-items:center; gap:10px; }
+        #ai-chatbot-card p{ margin:6px 0 0; color:var(--muted); font-size:0.95rem; }
+
+        .chat-controls{ display:flex; gap:8px; align-items:center; }
+        .icon-btn{
+            background:transparent;
+            border: none;
+            cursor:pointer;
+            padding:8px;
+            border-radius:10px;
+            color:var(--primary);
+            font-size:1rem;
+        }
+        .icon-btn[aria-pressed="true"]{ background:rgba(20,121,255,0.06); }
+
+        /* Chat window */
+        .chat-window{
+            flex:1 1 auto;
+            min-height:300px;
+            border-radius:12px;
+            padding:12px;
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+            overflow-y:auto;
+            -webkit-overflow-scrolling: touch;
+            border:1px solid rgba(16,24,64,0.06);
+            background: linear-gradient(180deg, rgba(249,252,255,0.9), rgba(245,248,255,0.92));
+        }
+
+        /* Message bubbles */
+        .chat-message{
+            max-width:82%;
+            padding:10px 14px;
+            border-radius:18px;
+            font-size:0.98rem;
+            line-height:1.45;
+            word-break:break-word;
+            white-space:pre-wrap;
+            box-shadow: 0 2px 10px rgba(16,24,64,0.03);
+        }
+        .ai-message{
+            align-self:flex-start;
+            background: linear-gradient(180deg, #f6f8ff, #eef3ff);
+            color:var(--text);
+            border-bottom-left-radius:8px;
+            border-top-right-radius:8px;
+        }
+        .user-message{
+            align-self:flex-end;
+            background: linear-gradient(90deg, var(--primary) 0%, #1a1a1a 100%);
+            color:#fff;
+            border-bottom-right-radius:8px;
+            border-top-left-radius:8px;
+        }
+        /* small timestamp / meta (optional) */
+        .msg-meta{ display:block; font-size:0.75rem; color:var(--muted); margin-top:6px; }
+
+        /* Input area */
+        .chat-input-area{
+            display:flex;
+            gap:10px;
+            align-items:center;
+            margin-top:6px;
+        }
+        .chat-input-area input[type="text"]{
+            flex:1;
+            padding:12px 14px;
+            border-radius:24px;
+            border:1px solid #e4e9f5;
+            font-size:1rem;
+            background:#fff;
+            outline:none;
+            transition:box-shadow .12s ease, border-color .12s ease;
+        }
+        .chat-input-area input[type="text"]:focus{ box-shadow:0 6px 22px rgba(20,121,255,0.06); border-color:var(--primary); }
+        .chat-input-area button.send-btn{
+            background:var(--accent);
+            color:#fff;
+            border:none;
+            padding:10px 14px;
+            border-radius:20px;
+            cursor:pointer;
+            font-weight:600;
+            box-shadow:0 6px 18px rgba(255,169,64,0.12);
+        }
+
+        /* Attachment preview area */
+        .attachment-preview{
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+            align-items:center;
+            margin-bottom:8px;
+        }
+        .attachment-item{
+            background:rgba(16,24,64,0.04);
+            border-radius:10px;
+            padding:6px;
+            display:flex;
+            gap:8px;
+            align-items:center;
+            max-width:70%;
+        }
+        .attachment-thumb{
+            width:56px;
+            height:40px;
+            object-fit:cover;
+            border-radius:6px;
+            background:#fff;
+            display:inline-block;
+            border:1px solid rgba(16,24,64,0.06);
+        }
+        .attachment-meta{
+            display:flex;
+            flex-direction:column;
+            gap:4px;
+            font-size:0.85rem;
+            color:var(--muted);
+            max-width:calc(100% - 64px);
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
+        .attachment-remove{
+            background:transparent;
+            border:none;
+            color:#ff6b6b;
+            cursor:pointer;
+            font-size:1.05rem;
+            padding:4px;
+            margin-left:6px;
+        }
+
+        .upload-progress {
+            font-size:0.9rem;
+            color:var(--muted);
+            margin-top:6px;
+        }
+
+        /* Fullscreen */
+        #ai-chatbot-card.chat-fullscreen{
+            position:fixed;
+            inset:0;
+            width:100vw;
+            height:100vh;
+            margin:0;
+            border-radius:0;
+            z-index:9999;
+            padding:18px;
+            background: linear-gradient(180deg, #fff, #f6fbff);
+        }
+        #ai-chatbot-card.chat-fullscreen .chat-window{
+            height: calc(100vh - 200px);
+            min-height: 380px;
+        }
+
+        /* Footer - smaller and simplified */
+        .site-footer{
+            background: linear-gradient(90deg, #232d46, #334877 90%);
+            color:#e7eaf1;
+            padding:12px 0;
+            font-size:0.92rem;
+            box-shadow: 0 -4px 22px rgba(52,103,217,0.06);
+        }
+        .footer-inner{
+            max-width:900px;
+            margin:0 auto;
+            padding:8px 18px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+        }
+        .footer-contact a{ color:#ffd9a6; text-decoration:none; font-weight:600; }
+        .footer-note{ color:#c7cbe0; font-size:0.86rem; }
+
+        /* Responsive */
+        @media (max-width:700px){
+            .container{ padding:0 12px 90px; margin-top:10px; }
+            header{ padding:12px; }
+            header h1{ font-size:1.05rem; }
+            .card{ padding:12px; border-radius:14px; }
+            .chat-window{ min-height: 260px; padding:10px; }
+            #ai-chatbot-card.chat-fullscreen .chat-window{ height: calc(100vh - 170px); }
+            .chat-input-area input{ padding:10px 12px; font-size:0.98rem; }
+            .attachment-thumb{ width:48px; height:36px; }
+        }
+        @media (max-width:420px){
+            .chat-window{ min-height:220px; }
+            .chat-input-area button{ padding:9px 12px; font-size:0.95rem; }
+            .footer-inner{ flex-direction:column; align-items:center; gap:6px; text-align:center; padding:10px 12px; }
+        }
+    </style>
+</head>
 <body id="page-top">
     <header>
         <a href="/" class="home-btn" title="Về trang chủ">🏠</a>
@@ -22,21 +305,27 @@
                         Trợ lý Scratch
                     </span>
                 </h2>
+
                 <div class="chat-controls" role="toolbar" aria-label="Chat controls">
                     <button id="toggle-fullscreen-btn" class="icon-btn" title="Toàn màn hình" aria-pressed="false">⤢</button>
                     <button id="close-fullscreen-btn" class="icon-btn" title="Đóng toàn màn hình" aria-pressed="false" style="display:none">✕</button>
                 </div>
             </div>
+
             <p>Xin chào! Mình là Mentor Scratch — hỏi gì cứ hỏi nhé.</p>
+
             <div id="chat-window" class="chat-window" aria-live="polite">
                 <div class="chat-message ai-message">
             Hi! Tôi có thể giúp gì cho bạn hôm nay?
                 </div>
             </div>
+
             <div id="attachment-preview" class="attachment-preview" aria-hidden="true" style="display:none"></div>
+
             <div class="chat-input-area" role="form" aria-label="Gửi tin nhắn">
                 <label for="file-input" class="icon-btn" title="Đính kèm tệp">📎</label>
                 <input type="file" id="file-input" accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/zip,.sb3" multiple style="display:none" aria-label="Chọn tệp đính kèm" capture="environment">
+
                 <input type="text" id="user-input" placeholder="Đặt câu hỏi bất kỳ..." autocomplete="off" aria-label="Nội dung câu hỏi">
                 <button id="send-button" class="send-btn">Gửi</button>
             </div>
@@ -44,10 +333,18 @@
     </div>
 
     <footer class="site-footer" aria-hidden="false">
-        </footer>
+        <div class="footer-inner">
+            <div class="footer-contact">
+                <span class="footer-note">Liên hệ: </span>
+                <span style="display: inline-block; margin-left: 4px;">
+                    Facebook: <a href="https://www.facebook.com/nung.hien" target="_blank">https://www.facebook.com/nung.hien</a>
+                </span>
+            </div>
+            <div class="footer-note">© 2025 Mentor Scratch — Website hỗ trợ học tập phi lợi nhuận. Made with ❤️ by Nung Van Hien.</div>
+        </div>
+    </footer>
 
     <a href="#page-top" id="back-to-top-btn" title="Lên đầu trang" style="display:none;">⬆️</a>
-
 
     <script>
     // --- CÁC HÀM QUẢN LÝ ĐÍNH KÈM ĐƯỢC ĐƯA RA NGOÀI (GLOBAL) ---
@@ -258,14 +555,11 @@
         if(toggleBtn) toggleBtn.addEventListener('click', openFullscreenMode);
         if(closeBtn) closeBtn.addEventListener('click', closeFullscreenMode);
 
-        // Enter-to-send (Giữ nguyên - chatbot.js cũng xử lý việc này, nhưng để đây không sao)
-        if(userInput) userInput.addEventListener('keydown', function(e){
-            if(e.key === 'Enter' && !e.shiftKey){
-                e.preventDefault();
-                // chatbot.js sẽ xử lý click
-                if(sendBtn) sendBtn.click();
-            }
-        });
+        /*
+          FIX 3: Xóa trình lắng nghe phím 'Enter' trùng lặp.
+          Tệp chatbot.js đã xử lý việc này rồi.
+        */
+        // if(userInput) userInput.addEventListener('keydown', ...); // ĐÃ XÓA
 
         // Smart auto-scroll (Giữ nguyên)
         if(chatWindow) {
@@ -302,9 +596,6 @@
             });
         }
         
-        // [ĐÃ XÓA] sendBtn.addEventListener('click', ...)
-        // [ĐÃ XÓA] uploadAttachmentsWithProgress(...)
-        // Toàn bộ logic gửi và tải lên đã được chuyển sang chatbot.js
     });
     </script>
 
