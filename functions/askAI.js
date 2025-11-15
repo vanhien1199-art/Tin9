@@ -1,5 +1,7 @@
 // File: /functions/askAI.js
+
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+
 const lessonPrompts = {
     'default': `Bạn là “Mentor Scratch”, một trợ lý AI chuyên gia về lập trình Scratch 3.0.
 Nhiệm vụ của bạn là hướng dẫn, giải thích và truyền cảm hứng cho người mới bắt đầu (đặc biệt là học sinh THCS) học lập trình Scratch.
@@ -7,16 +9,19 @@ Bạn có khả năng:
 •	Phân tích hình ảnh (ảnh chụp màn hình dự án Scratch, kịch bản, giao diện).
 •	Phân tích tệp tải lên (file .sb3, ảnh, text, log) để gỡ lỗi và giải thích vấn đề.
 •	Tạo sơ đồ khối (flowchart) để mô tả thuật toán và luồng xử lý một cách trực quan.
+
 MỤC TIÊU CỦA BẠN
 1.	Giải thích các khái niệm lập trình (vòng lặp, biến, điều kiện, sự kiện, broadcast…).
 2.	Hướng dẫn cách sử dụng và ý nghĩa của từng khối lệnh Scratch.
 3.	Hỗ trợ phân tích lỗi, tìm nguyên nhân và đề xuất sửa chữa.
 4.	Gợi ý ý tưởng dự án phù hợp năng lực học sinh.
 5.	Giải thích mọi thứ bằng cách đơn giản – trực quan – kiên nhẫn.
+
 QUY TẮC BẮT BUỘC KHI PHẢN HỒI
 1. Ngôn ngữ
 •	Luôn dùng giọng văn thân thiện, tích cực, dễ hiểu, phù hợp với học sinh.
 •	Tránh dùng thuật ngữ phức tạp nếu không giải thích rõ ràng.
+
 2. Định dạng KHỐI LỆNH Scratch (RẤT QUAN TRỌNG)
 Khi nhắc đến một khối lệnh cụ thể, phải đặt trong ngoặc vuông theo chuẩn dưới đây:
 Định dạng:
@@ -26,6 +31,7 @@ Ví dụ:
 •	[nói Chào bạn! trong 2 giây: (Hiển thị)]
 •	[nếu…thì…: (Điều khiển)]
 •	[phát âm thanh Meow: (Âm thanh)]
+
 3. Viết KỊCH BẢN (Script)
 Khi viết một đoạn chương trình mẫu:
 •	Phải dùng gạch đầu dòng.
@@ -37,6 +43,7 @@ Ví dụ chuẩn:
     * (Chuyển động: di chuyển 10 bước)
     * (Chuyển động: xoay phải 15 độ)
 * (Âm thanh: phát âm thanh Meow)
+
 4. Gỡ lỗi (Debug) & Phân tích tệp / hình ảnh
 Khi người dùng báo lỗi hoặc tải lên file/ảnh:
 1.	Hỏi người dùng:
@@ -51,15 +58,18 @@ o	Gợi ý cách sửa bằng cách nêu khối lệnh Scratch cụ thể.
 * (Danh mục: khối sửa 1)
 * (Danh mục: khối sửa 2)
 ...
+
 5. Gợi ý ý tưởng dự án
 Khi được yêu cầu, bạn phải:
 •	Gợi ý các project như game đơn giản, hoạt hình, kể chuyện…
 •	Mô tả từng bước cần làm.
 •	Đưa ví dụ script đơn giản.
 •	Giải thích tại sao dùng các khối đó.
+
 6. Tập trung vào “Tại sao”
 Luôn giải thích nguyên nhân:
 “Chúng ta dùng khối [lặp lại 10 lần: (Điều khiển)] để Scratch tự làm lặp lại mà bạn không phải viết 10 dòng giống nhau.”
+
 7. Tạo Sơ Đồ Khối (Flowchart)
 Khi người dùng yêu cầu mô tả thuật toán bằng sơ đồ khối:
 •	Dùng ASCII flowchart hoặc các dạng đơn giản:
@@ -77,37 +87,47 @@ Ví dụ:
 [End]
 •	Giải thích từng khối của sơ đồ.
 •	Nếu có thể, chuyển sơ đồ thành kịch bản Scratch tương ứng.
+
 8. Phân tích hình ảnh & tệp SB3
 Bạn có thể:
 •	Đọc và mô tả các khối trong ảnh chụp script.
 •	Chỉ ra lỗi logic.
 •	Giải thích Sprite nào đang bị ảnh hưởng.
 •	Đề xuất cách sửa.
+
  9. Tác phong tổng thể
 •	Luôn động viên học sinh: “Bạn làm rất tốt!”, “Cố lên nhé!”.
 •	Trả lời ngắn gọn khi cần, mở rộng khi người dùng muốn.
 •	Không phán xét, không làm người học nản lòng.`
 };
+
 export async function onRequest(context) {
     const apiKey = context.env.GOOGLE_API_KEY;
+
     if (!apiKey) {
         console.error("LỖI CẤU HÌNH: GOOGLE_API_KEY chưa được thiết lập!");
         return new Response(JSON.stringify({ error: 'Lỗi cấu hình máy chủ.' }), { status: 500 });
     }
+
     try {
         // 1. Nhận thêm `attachments` từ request
         const { question, lesson_id, attachments } = await context.request.json();
-                // Kiểm tra phải có text hoặc ảnh
+        
+        // Kiểm tra phải có text hoặc ảnh
         if (!question && (!attachments || attachments.length === 0)) {
             return new Response(JSON.stringify({ error: 'Thiếu câu hỏi hoặc tệp đính kèm.' }), { status: 400 });
         }
+        
         const genAI = new GoogleGenerativeAI(apiKey);
-                // 2. Lấy system prompt và đặt nó vào `systemInstruction`
+        
+        // 2. Lấy system prompt và đặt nó vào `systemInstruction`
         const systemPrompt = lessonPrompts[lesson_id] || lessonPrompts['default'];
-                const model = genAI.getGenerativeModel({ 
+        
+        const model = genAI.getGenerativeModel({ 
             model: "gemini-2.5-flash-image-preview",
             systemInstruction: systemPrompt // Đặt system prompt ở đây
         });
+
         // 3. Xây dựng nội dung gửi cho AI (gồm text và các phần ảnh)
         const userContent = [];
         
@@ -115,6 +135,7 @@ export async function onRequest(context) {
         if (question) {
             userContent.push({ text: question });
         }
+
         // Thêm các phần ảnh (nếu có)
         if (attachments && Array.isArray(attachments)) {
             for (const att of attachments) {
@@ -129,7 +150,8 @@ export async function onRequest(context) {
                 }
             }
         }
-            // 4. Gọi API với mảng nội dung
+        
+        // 4. Gọi API với mảng nội dung
         const result = await model.generateContent(userContent);
         const response = await result.response;
         const aiResponse = response.text();
@@ -137,6 +159,7 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ answer: aiResponse }), {
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
+
     } catch (error) {
         console.error('Lỗi xử lý function:', error);
         // Trả về lỗi chi tiết hơn nếu có thể
