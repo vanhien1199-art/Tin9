@@ -3,7 +3,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const lessonPrompts = {
-    'default':`Bạn là “Mentor Scratch”, một trợ lý AI chuyên gia về lập trình Scratch 3.0.
+    'default': `Bạn là “Mentor Scratch”, một trợ lý AI chuyên gia về lập trình Scratch 3.0.
 Nhiệm vụ của bạn là hướng dẫn, giải thích và truyền cảm hứng cho người mới bắt đầu (đặc biệt là học sinh THCS) học lập trình Scratch.
 Bạn có khả năng:
 •	Phân tích hình ảnh (ảnh chụp màn hình dự án Scratch, kịch bản, giao diện).
@@ -100,6 +100,7 @@ Bạn có thể:
 •	Trả lời ngắn gọn khi cần, mở rộng khi người dùng muốn.
 •	Không phán xét, không làm người học nản lòng.`
 };
+
 export async function onRequest(context) {
     const apiKey = context.env.GOOGLE_API_KEY;
 
@@ -109,18 +110,49 @@ export async function onRequest(context) {
     }
 
     try {
-        const { question, lesson_id } = await context.request.json();
-        if (!question) {
-            return new Response(JSON.stringify({ error: 'Thiếu câu hỏi.' }), { status: 400 });
+        // 1. Nhận thêm `attachments` từ request
+        const { question, lesson_id, attachments } = await context.request.json();
+        
+        // Kiểm tra phải có text hoặc ảnh
+        if (!question && (!attachments || attachments.length === 0)) {
+            return new Response(JSON.stringify({ error: 'Thiếu câu hỏi hoặc tệp đính kèm.' }), { status: 400 });
         }
         
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
-
+        
+        // 2. Lấy system prompt và đặt nó vào `systemInstruction`
         const systemPrompt = lessonPrompts[lesson_id] || lessonPrompts['default'];
-        const fullPrompt = `${systemPrompt}\n\nCâu hỏi của học sinh: "${question}"`;
+        
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash-image-preview",
+            systemInstruction: systemPrompt // Đặt system prompt ở đây
+        });
 
-        const result = await model.generateContent(fullPrompt);
+        // 3. Xây dựng nội dung gửi cho AI (gồm text và các phần ảnh)
+        const userContent = [];
+        
+        // Thêm phần text
+        if (question) {
+            userContent.push({ text: question });
+        }
+
+        // Thêm các phần ảnh (nếu có)
+        if (attachments && Array.isArray(attachments)) {
+            for (const att of attachments) {
+                // Chỉ xử lý những file có base64Data (là ảnh đã được convert)
+                if (att.base64Data) { 
+                    userContent.push({
+                        inlineData: {
+                            mimeType: att.mimeType,
+                            data: att.base64Data
+                        }
+                    });
+                }
+            }
+        }
+        
+        // 4. Gọi API với mảng nội dung
+        const result = await model.generateContent(userContent);
         const response = await result.response;
         const aiResponse = response.text();
 
@@ -130,11 +162,13 @@ export async function onRequest(context) {
 
     } catch (error) {
         console.error('Lỗi xử lý function:', error);
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+        // Trả về lỗi chi tiết hơn nếu có thể
+        const errorMessage = error.message || 'Lỗi không xác định từ máy chủ AI.';
+        // Nếu lỗi do Google API trả về (ví dụ: an toàn, nội dung không phù hợp)
+        if (error.response && error.response.promptFeedback) {
+             return new Response(JSON.stringify({ error: 'Nội dung bị chặn, có thể do vi phạm an toàn.' }), { status: 400 });
+        }
+        
+        return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
     }
 }
-
-
-
-
-
