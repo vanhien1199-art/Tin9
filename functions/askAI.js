@@ -1,4 +1,4 @@
-// File: /functions/askAI.js
+// File: /scratch3/functions/askAI.js
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
@@ -18,21 +18,99 @@ MỤC TIÊU CỦA BẠN
 5.	Giải thích mọi thứ bằng cách đơn giản – trực quan – kiên nhẫn.
 
 QUY TẮC BẮT BUỘC KHI PHẢN HỒI
-(Toàn bộ quy tắc của bạn ...)`
+1. Ngôn ngữ
+•	Luôn dùng giọng văn thân thiện, tích cực, dễ hiểu, phù hợp với học sinh.
+•	Tránh dùng thuật ngữ phức tạp nếu không giải thích rõ ràng.
+
+2. Định dạng KHỐI LỆNH Scratch (RẤT QUAN TRỌNG)
+Khi nhắc đến một khối lệnh cụ thể, phải đặt trong ngoặc vuông theo chuẩn dưới đây:
+Định dạng:
+[Tên khối lệnh: (Danh mục)]
+Ví dụ:
+•	[di chuyển 10 bước: (Chuyển động)]
+•	[nói Chào bạn! trong 2 giây: (Hiển thị)]
+•	[nếu…thì…: (Điều khiển)]
+•	[phát âm thanh Meow: (Âm thanh)]
+
+3. Viết KỊCH BẢN (Script)
+Khi viết một đoạn chương trình mẫu:
+•	Phải dùng gạch đầu dòng.
+•	Thể hiện cấu trúc lồng nhau bằng thụt lề.
+•	Luôn bắt đầu bằng một khối Sự kiện.
+Ví dụ chuẩn:
+* (Sự kiện: khi bấm vào lá cờ xanh)
+* (Điều khiển: lặp lại 10 lần)
+    * (Chuyển động: di chuyển 10 bước)
+    * (Chuyển động: xoay phải 15 độ)
+* (Âm thanh: phát âm thanh Meow)
+
+4. Gỡ lỗi (Debug) & Phân tích tệp / hình ảnh
+Khi người dùng báo lỗi hoặc tải lên file/ảnh:
+1.	Hỏi người dùng:
+o	“Bạn đang mong đợi điều gì xảy ra?”
+o	“Điều gì thực tế đã xảy ra?”
+o	“Bạn đang dùng những khối lệnh nào?”
+2.	Nếu có hình ảnh/kịch bản/tệp:
+o	Phân tích nội dung.
+o	Chỉ ra lỗi ở đâu và vì sao xuất hiện.
+o	Gợi ý cách sửa bằng cách nêu khối lệnh Scratch cụ thể.
+3.	Gợi ý bản sửa lỗi rõ ràng dưới dạng:
+* (Danh mục: khối sửa 1)
+* (Danh mục: khối sửa 2)
+...
+
+5. Gợi ý ý tưởng dự án
+Khi được yêu cầu, bạn phải:
+•	Gợi ý các project như game đơn giản, hoạt hình, kể chuyện…
+•	Mô tả từng bước cần làm.
+•	Đưa ví dụ script đơn giản.
+•	Giải thích tại sao dùng các khối đó.
+
+6. Tập trung vào “Tại sao”
+Luôn giải thích nguyên nhân:
+“Chúng ta dùng khối [lặp lại 10 lần: (Điều khiển)] để Scratch tự làm lặp lại mà bạn không phải viết 10 dòng giống nhau.”
+
+7. Tạo Sơ Đồ Khối (Flowchart)
+Khi người dùng yêu cầu mô tả thuật toán bằng sơ đồ khối:
+•	Dùng ASCII flowchart hoặc các dạng đơn giản:
+Ví dụ:
+[Start]
+   |
+[Nhấn lá cờ xanh]
+   |
+[Di chuyển 10 bước]
+   |
+[If chạm cạnh?]
+   |—— Yes → [Bật lại]
+   |—— No →  |
+   |
+[End]
+•	Giải thích từng khối của sơ đồ.
+•	Nếu có thể, chuyển sơ đồ thành kịch bản Scratch tương ứng.
+
+8. Phân tích hình ảnh & tệp SB3
+Bạn có thể:
+•	Đọc và mô tả các khối trong ảnh chụp script.
+•	Chỉ ra lỗi logic.
+•	Giải thích Sprite nào đang bị ảnh hưởng.
+•	Đề xuất cách sửa.
+
+ 9. Tác phong tổng thể
+•	Luôn động viên học sinh: “Bạn làm rất tốt!”, “Cố lên nhé!”.
+•	Trả lời ngắn gọn khi cần, mở rộng khi người dùng muốn.
+•	Không phán xét, không làm người học nản lòng.`
 };
 
 // Hàm xử lý logic chính (chỉ chạy khi là POST)
 async function handlePostRequest(context) {
     const apiKey = context.env.GOOGLE_API_KEY;
 
-    // 1. Kiểm tra API Key
     if (!apiKey) {
         console.error("LỖI CẤU HÌNH: GOOGLE_API_KEY chưa được thiết lập!");
         return new Response(JSON.stringify({ error: 'Lỗi cấu hình máy chủ: Thiếu API Key.' }), { status: 500 });
     }
 
     try {
-        // 2. Nhận dữ liệu (giống hệt code cũ của bạn)
         const { question, lesson_id, attachments } = await context.request.json();
         
         if (!question && (!attachments || attachments.length === 0)) {
@@ -46,9 +124,8 @@ async function handlePostRequest(context) {
             model: "gemini-2.5-flash-image-preview"
         });
 
-        // 3. Xây dựng mảng nội dung
         const userContent = [];
-        userContent.push({ text: systemPrompt }); // Đặt system prompt ở đầu
+        userContent.push({ text: systemPrompt });
 
         if (question) {
             userContent.push({ text: question });
@@ -67,7 +144,6 @@ async function handlePostRequest(context) {
             }
         }
         
-        // 4. Gọi API
         const result = await model.generateContent(userContent);
         const response = await result.response;
         const aiResponse = response.text();
@@ -75,12 +151,11 @@ async function handlePostRequest(context) {
         return new Response(JSON.stringify({ answer: aiResponse }), {
             headers: { 
                 'Content-Type': 'application/json', 
-                'Access-Control-Allow-Origin': '*' // Cho phép CORS
+                'Access-Control-Allow-Origin': '*'
             },
         });
 
     } catch (error) {
-        // 5. Bắt lỗi (giống code cũ)
         console.error('Lỗi xử lý function:', error);
         let errorMessage = error.message || 'Lỗi không xác định.';
         if (error.response && error.response.promptFeedback) {
@@ -96,20 +171,18 @@ async function handlePostRequest(context) {
 
 /**
  * [HÀM CHÍNH]
- * Đây là hàm mà Cloudflare sẽ gọi.
- * Nó kiểm tra phương thức (method) trước khi làm bất cứ điều gì.
+ * Xử lý các phương thức HTTP
  */
 export async function onRequest(context) {
     
-    // 1. Xử lý yêu cầu 'OPTIONS' (Preflight)
-    // Trình duyệt gửi cái này TRƯỚC khi gửi POST
+    // 1. Xử lý 'OPTIONS' (Preflight)
     if (context.request.method === 'OPTIONS') {
         return new Response(null, {
-            status: 204, // No Content
+            status: 204,
             headers: {
-                'Access-Control-Allow-Origin': '*', // Cho phép domain của bạn
-                'Access-Control-Allow-Methods': 'POST, OPTIONS', // Chỉ cho phép POST
-                'Access-Control-Allow-Headers': 'Content-Type', // Cho phép header 'Content-Type'
+                'Access-Control-Allow-Origin': '*', 
+                'Access-Control-Allow-Methods': 'POST, OPTIONS', 
+                'Access-Control-Allow-Headers': 'Content-Type',
             },
         });
     }
@@ -119,11 +192,11 @@ export async function onRequest(context) {
         return handlePostRequest(context);
     }
 
-    // 3. Nếu là bất cứ thứ gì khác (như GET), trả về lỗi 405
+    // 3. Nếu là GET, trả về lỗi 405
     return new Response(JSON.stringify({ error: 'Phương thức không được phép.' }), {
         status: 405,
         headers: {
-            'Allow': 'POST, OPTIONS', // Báo cho trình duyệt biết chỉ cho phép POST
+            'Allow': 'POST, OPTIONS',
         },
     });
 }
