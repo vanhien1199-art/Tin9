@@ -107,6 +107,7 @@
 
     <script>
     // Toàn bộ logic của Chatbot, bao gồm UI, Xử lý tệp, và Gửi tin nhắn
+    // File chatbot.js không còn cần thiết
     document.addEventListener('DOMContentLoaded', function() {
         const backToTopBtn = document.getElementById("back-to-top-btn");
         window.onscroll = () => {
@@ -152,6 +153,7 @@
         // Biến 'attachments' này được giữ lại từ file gốc của bạn
         let attachments = []; 
 
+        // Hàm renderAttachments từ file gốc của bạn
         function renderAttachments() {
             previewArea.innerHTML = '';
             if (attachments.length === 0) {
@@ -171,7 +173,6 @@
                     img.src = att.url;
                     item.appendChild(img);
                 } else {
-                    // Lọc ở input 'accept' nên chỉ có ảnh, nhưng vẫn để dự phòng
                     const placeholder = document.createElement('div');
                     placeholder.className = 'attachment-thumb';
                     placeholder.textContent = '📄';
@@ -193,7 +194,8 @@
                 previewArea.appendChild(item);
             });
         }
-
+        
+        // Hàm removeAttachment từ file gốc của bạn
         function removeAttachment(id) {
             const idx = attachments.findIndex(a => a.id === id);
             if (idx !== -1) {
@@ -203,10 +205,10 @@
             }
         }
 
+        // Hàm addFiles từ file gốc của bạn
         function addFiles(fileList) {
             for (let i=0; i < fileList.length; i++) {
                 const f = fileList[i];
-                // Chỉ chấp nhận ảnh (đã lọc ở input, nhưng kiểm tra lại)
                 if (!f.type.startsWith('image/')) {
                     alert('Lỗi: Chỉ hỗ trợ tệp hình ảnh.');
                     continue;
@@ -220,128 +222,102 @@
 
         fileInput.addEventListener('change', (e) => {
             if (e.target.files) addFiles(e.target.files);
-            fileInput.value = ''; // Reset để chọn lại được
+            fileInput.value = ''; // Reset
         });
 
-        // === LOGIC GỌI AI (MỚI) ===
+        // === LOGIC GỌI AI (MỚI - THAY THẾ chatbot.js) ===
 
-        /**
-         * Chuyển đổi File ảnh sang Base64 string
-         */
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = () => {
-                    const base64String = reader.result.split(',')[1]; // Chỉ lấy phần data
+                    const base64String = reader.result.split(',')[1];
                     resolve(base64String);
                 };
                 reader.onerror = (error) => reject(error);
             });
         }
 
-        /**
-         * Thêm tin nhắn vào cửa sổ chat
-         */
         function appendMessage(message, sender) {
             const msgDiv = document.createElement('div');
             msgDiv.className = `chat-message ${sender}-message`;
             if (sender === 'ai') {
-                msgDiv.innerHTML = marked.parse(message); // Dùng 'marked' để render
+                msgDiv.innerHTML = marked.parse(message);
             } else {
-                msgDiv.innerText = message; // Tin nhắn user chỉ là text
+                msgDiv.innerText = message;
             }
             chatWindow.appendChild(msgDiv);
             chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
             return msgDiv;
         }
 
-        /**
-         * Xử lý chính khi nhấn nút Gửi (LOGIC MỚI)
-         */
         async function handleSend() {
             const textValue = userInput.value.trim();
-            const currentAttachments = [...attachments]; // Lấy file từ UI
+            const currentAttachments = [...attachments]; 
 
-            if (!textValue && currentAttachments.length === 0) {
-                return; // Không gửi nếu không có gì
-            }
+            if (!textValue && currentAttachments.length === 0) return;
             
-            // 1. Vô hiệu hóa input và xóa tệp đính kèm
             userInput.value = '';
             userInput.disabled = true;
             sendBtn.disabled = true;
-            attachments.length = 0; // Xóa mảng gốc
-            renderAttachments(); // Cập nhật lại UI
+            attachments.length = 0; 
+            renderAttachments(); 
 
-            // 2. Hiển thị tin nhắn của người dùng
             let userMessageContent = textValue;
             if (currentAttachments.length > 0) {
                  userMessageContent += `\n(Đã đính kèm ${currentAttachments.length} ảnh)`;
             }
             appendMessage(userMessageContent, 'user');
             
-            // 3. Hiển thị thông báo "AI đang trả lời..."
             const loadingMsg = appendMessage('Mentor Scratch đang suy nghĩ... 🤖', 'ai');
 
-            // 4. Chuẩn bị payload để gửi lên backend
             const payload = {
                 question: textValue,
-                lesson_id: 'default', // Đang hardcode, bạn có thể thay đổi
-                attachments: [] // Mảng chứa các ảnh đã convert
+                lesson_id: 'default',
+                attachments: [] 
             };
 
             try {
-                // 5. Chuyển đổi các tệp đính kèm sang Base64
                 for (const att of currentAttachments) {
                     const base64Data = await fileToBase64(att.file);
                     payload.attachments.push({
                         mimeType: att.file.type,
                         base64Data: base64Data
                     });
-                    URL.revokeObjectURL(att.url); // Giải phóng bộ nhớ
+                    URL.revokeObjectURL(att.url);
                 }
 
-                // 6. Gọi Cloudflare Function
-                // !!! ĐẢM BẢO ĐƯỜNG DẪN NÀY ĐÚNG VỚI CẤU HÌNH CỦA BẠN
+                // ĐƯỜNG DẪN QUAN TRỌNG
+                // Nó trỏ về gốc, Cloudflare sẽ ánh xạ nó tới /scratch3/functions/askAI
+                // nếu chúng ta cấu hình Root Directory đúng
                 const response = await fetch('/functions/askAI', { 
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
-                // 7. [BẮT LỖI THÔNG MINH]
-                // Ngăn lỗi 'Unexpected end of JSON input'
                 if (!response.ok) {
-                    const errorText = await response.text(); // Lấy lỗi dạng text
+                    const errorText = await response.text();
                     let errorMessage;
                     try {
-                        // Thử parse xem có phải JSON không
                         const errData = JSON.parse(errorText);
                         errorMessage = errData.error || `Lỗi ${response.status}: ${errorText}`;
                     } catch (e) {
-                        // Không phải JSON, chỉ là text hoặc HTML
                         errorMessage = `Lỗi ${response.status} từ máy chủ: ${errorText.substring(0, 300)}...`; 
                     }
-                    throw new Error(errorMessage); // Ném lỗi
+                    throw new Error(errorMessage);
                 }
 
-                // 8. Nếu thành công, đọc JSON
                 const data = await response.json();
-                
-                // 9. Cập nhật tin nhắn "loading" bằng câu trả lời thật
                 loadingMsg.innerHTML = marked.parse(data.answer);
 
             } catch (error) {
                 console.error('Lỗi khi gọi AI:', error);
-                // 10. HIỂN THỊ LỖI THẬT
                 loadingMsg.innerHTML = `<strong>Rất tiếc, đã có lỗi xảy ra:</strong><br>${error.message}`;
                 loadingMsg.style.color = 'red';
                 loadingMsg.style.whiteSpace = 'normal';
             } finally {
-                // 11. Kích hoạt lại input
                 userInput.disabled = false;
                 sendBtn.disabled = false;
                 userInput.focus();
@@ -349,14 +325,12 @@
         }
 
         // === GÁN SỰ KIỆN GỬI (MỚI) ===
-        // Thay thế logic cũ
         sendBtn.addEventListener('click', handleSend);
         
-        // Giữ lại logic 'Enter' (vì nó chỉ .click() nút send)
         userInput.addEventListener('keydown', function(e){
             if(e.key === 'Enter' && !e.shiftKey){
                 e.preventDefault();
-                sendBtn.click();
+                sendBtn.click(); // Kích hoạt hàm handleSend
             }
         });
 
