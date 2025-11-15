@@ -104,35 +104,33 @@ Bạn có thể:
 export async function onRequest(context) {
     const apiKey = context.env.GOOGLE_API_KEY;
 
+    // Lỗi 1: Kiểm tra API Key trên Cloudflare
     if (!apiKey) {
         console.error("LỖI CẤU HÌNH: GOOGLE_API_KEY chưa được thiết lập!");
         return new Response(JSON.stringify({ error: 'Lỗi cấu hình máy chủ: Thiếu API Key.' }), { status: 500 });
     }
 
     try {
-        // 1. Nhận attachments (mới)
+        // 1. Nhận cả 'question' và 'attachments'
         const { question, lesson_id, attachments } = await context.request.json();
         
-        // Kiểm tra phải có text hoặc ảnh
+        // 2. Kiểm tra phải có text hoặc ảnh
         if (!question && (!attachments || attachments.length === 0)) {
             return new Response(JSON.stringify({ error: 'Thiếu câu hỏi hoặc tệp đính kèm.' }), { status: 400 });
         }
         
         const genAI = new GoogleGenerativeAI(apiKey);
-        
-        // 2. Lấy system prompt (như file cũ)
         const systemPrompt = lessonPrompts[lesson_id] || lessonPrompts['default'];
         
-        // 3. Lấy model MÀ KHÔNG CÓ systemInstruction (như file cũ)
+        // 3. Lấy model (KHÔNG dùng systemInstruction)
         const model = genAI.getGenerativeModel({ 
             model: "gemini-2.5-flash-image-preview"
         });
 
-        // 4. Xây dựng mảng userContent (mới)
+        // 4. Xây dựng mảng nội dung (content array)
         const userContent = [];
         
-        // 5. [ĐIỀU CHỈNH QUAN TRỌNG]
-        // Thêm system prompt vào ĐẦU MẢNG, giống cách file cũ của bạn hoạt động
+        // 5. [FIX QUAN TRỌNG] Thêm system prompt làm phần tử ĐẦU TIÊN
         userContent.push({ text: systemPrompt });
 
         // 6. Thêm câu hỏi của người dùng (nếu có)
@@ -140,9 +138,10 @@ export async function onRequest(context) {
             userContent.push({ text: question });
         }
 
-        // 7. Thêm các ảnh (nếu có)
+        // 7. Thêm các ảnh (attachments) đã được convert
         if (attachments && Array.isArray(attachments)) {
             for (const att of attachments) {
+                // Chỉ xử lý file có 'base64Data' (frontend sẽ gửi lên)
                 if (att.base64Data) { 
                     userContent.push({
                         inlineData: {
@@ -154,7 +153,7 @@ export async function onRequest(context) {
             }
         }
         
-        // 8. Gọi API với mảng nội dung
+        // 8. Gọi API với MẢNG nội dung (không phải string)
         const result = await model.generateContent(userContent);
         const response = await result.response;
         const aiResponse = response.text();
@@ -164,11 +163,10 @@ export async function onRequest(context) {
         });
 
     } catch (error) {
+        // Lỗi 2: Bắt lỗi từ Google (ví dụ key sai)
         console.error('Lỗi xử lý function:', error);
         
         let errorMessage = error.message || 'Lỗi không xác định từ máy chủ AI.';
-        
-        // Cung cấp thông báo lỗi rõ ràng hơn
         if (error.response && error.response.promptFeedback) {
              errorMessage = 'Nội dung bị chặn, có thể do vi phạm an toàn.';
              return new Response(JSON.stringify({ error: errorMessage }), { status: 400 });
