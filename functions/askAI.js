@@ -148,7 +148,7 @@ export async function onRequest(context) {
         const systemPrompt = lessonPrompts[lesson_id] || lessonPrompts['default'];
 
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash", // Sử dụng model hỗ trợ multimodal
+            model: "Gemini 3 Pro Preview", // Sử dụng model hỗ trợ multimodal
             systemInstruction: systemPrompt // Đặt system prompt ở đây
         });
 
@@ -180,6 +180,7 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
     }
 }
+
 
 
 
